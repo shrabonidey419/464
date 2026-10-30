@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>How far is the metro? STM stations in Montréal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Leaflet: the map library. Loaded from the internet, nothing to install. -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>How far is the metro? Walking access to STM stations in Montréal</h1>
+    <p>Many students and residents in Montreal rely on the metro every day, but a station that looks close on a map can be a long or difficult walk. This map helps them see which areas have good walking access to an STM metro station and which do not.</p>
+
+    <h3>This map is for</h3>
+    <p>Students and residents in Montreal who want to check how easy it is to walk to the metro.</p>
+
+    <h3>What you can do here</h3>
+    <p>click the box to see only the metro stations you can use with a wheelchair, and click any station to see its line and access.</p>
+
+    <label class="control">
+      <input type="checkbox" id="accessibleOnly" />
+      Show only wheelchair-accessible stations
+    </label>
+    <p id="status">Loading stations...</p>
+
+    <form id="storeSearch" class="control">
+      <label for="storeName">Find the closest metro station to a grocery store:</label>
+      <input type="search" id="storeName" placeholder="e.g. Metro, IGA, Couche-Tard" autocomplete="off" />
+      <button type="submit">Search</button>
+    </form>
+    <ul id="searchResults"></ul>
+
+    <h3>Not in this iteration</h3>
+    <ul>
+      <li><strong>Real walk times on the street network:</strong> still working on walking routes from the Google API.</li>
+      <li><strong>Grocery stores and barriers:</strong> needs a second dataset, planned for later.</li>
+      <li><strong>One borough focus:</strong> I kept the whole metro network to keep the pipeline simple; next I will focus on Côte-des-Neiges–NDG, where many students live and the Décarie expressway creates walking barriers.</li>
+      <li><strong>Transfer stations:</strong> stations like Berri-UQAM and Lionel-Groulx appear under one line only, because that is how the STM file stores them.</li>
+    </ul>
+
+    <h3>Where this comes from</h3>
+    <ul>
+      <li><a href="https://www.donneesquebec.ca/recherche/fr/dataset/a0073997-3a02-4c34-8acf-758a2ee950f4">STM bus and metro lines and stops</a>, Société de transport de Montréal. Licence: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Accessed 3 October 2026.</li>
+      <li>Basemap © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.</li>
+    </ul>
+  </header>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

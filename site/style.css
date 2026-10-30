@@ -1,0 +1,12 @@
+/* PRESENTATION: how the page looks. */
+body { margin: 0; font-family: Arial, Helvetica, sans-serif; }
+header { padding: 10px 16px; background: #1F2D5A; color: #fff; }
+header h1 { margin: 0; font-size: 20px; }
+header p { margin: 4px 0 0; font-size: 14px; color: #DCBD23; }
+#map { height: calc(100vh - 62px); }
+.legend { background: #5526c4; padding: 6px 10px; border-radius: 6px; line-height: 1.6; font-size: 13px; }
+#storeSearch { margin-top: 8px; font-size: 14px; }
+#storeSearch input { margin: 4px 4px 0 0; padding: 4px 6px; width: 260px; max-width: 100%; }
+#searchResults { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
+#searchResults button { background: none; border: none; padding: 0; color: #fff; text-decoration: underline; cursor: pointer; font: inherit; text-align: left; }
+.legend span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }

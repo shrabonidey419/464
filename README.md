@@ -83,3 +83,25 @@ Add 5-minute walking areas around each station so the popup can show which stati
 ## Reading the map
 
 Darker circles are metro stations with more grocery stores within 500 m of the station, measured in a straight line.
+
+
+
+## A3 feature: Barrier Check
+
+For A3 I will add a click-a-station tool that shows walking routes to the 3 nearest grocery stores, so that my reader can see where barriers like highways make nearby stores far on foot.
+
+It has depth because it brings in grocery store data and computes a detour ratio (walking distance ÷ straight-line distance), flagging routes above 1.5 in red.
+
+I will know it works when Namur station shows the Walmart route flagged red.
+
+My edge case is a station with no grocery store within a 500m walk; the popup will say "No grocery store within 500m."
+
+
+Test 1. I click Namur metro station.
+  Expected: Walking routes to the 3 nearest grocery stores appear. The Walmart route is red, and its popup shows a detour ratio above 1.5.
+
+Test 2. I click Mont-Royal metro station.
+  Expected: The previous routes clear. New routes appear, mostly green, with ratios near 1.2 shown in their popups.
+
+Test 3. I click a station with no grocery store within a 500m walk.
+  Expected: No routes appear. The popup says "No grocery store within 500m," and there is no console error.
