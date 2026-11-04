@@ -17,7 +17,7 @@
     <p>Students and residents in Montreal who want to check how easy it is to walk to the metro.</p>
 
     <h3>What you can do here</h3>
-    <p>Click the box to see only the metro stations you can use with a wheelchair, and click any station to see its line and access. Use the search boxes to find the closest metro station to a grocery store, or the closest open grocery store to a metro station. Tick a station in the station list to see every open grocery store within 500 m of it.</p>
+    <p>Click the box to see only the metro stations you can use with a wheelchair, and click any station to see its line and access. Use the search boxes to find the closest metro station to a grocery store, or the closest open grocery store to a metro station. Choose a station from the dropdown to see every open grocery store within 500 m of it.</p>
 
     <label class="control">
       <input type="checkbox" id="accessibleOnly" />
@@ -38,10 +38,12 @@
     </form>
     <ul id="searchResults"></ul>
 
-    <fieldset id="stationPicker" class="control">
-      <legend>Tick a metro station to see the open grocery stores within 500 m:</legend>
-      <div id="stationChecks">Loading stations...</div>
-    </fieldset>
+    <div id="stationPicker" class="control">
+      <label for="stationSelect">Choose a metro station to see the open grocery stores within 500 m:</label>
+      <select id="stationSelect" disabled>
+        <option value="">Loading stations...</option>
+      </select>
+    </div>
     <div id="pickerResults"></div>
 
     <h3>Not in this iteration</h3>

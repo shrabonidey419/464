@@ -21,7 +21,7 @@ header a { color: #DCBD23; }
 #searchResults { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
 #searchResults button { background: none; border: none; padding: 0; color: #fff; text-decoration: underline; cursor: pointer; font: inherit; text-align: left; }
 #stationPicker { margin: 10px 0 0; padding: 6px 10px; border: 1px solid #DCBD23; font-size: 14px; }
-#stationChecks { max-height: 180px; overflow-y: auto; }
-#stationChecks label { display: block; }
+#stationPicker label { display: block; }
+#stationSelect { margin-top: 4px; padding: 4px 6px; width: 100%; }
 #pickerResults h4 { margin: 10px 0 2px; font-size: 14px; color: #DCBD23; }
 .legend span { display: inline-block; width: 10px; height: 10px; border: 1px solid #3d3333; border-radius: 50%; margin-right: 6px; }

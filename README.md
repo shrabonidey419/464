@@ -1,5 +1,5 @@
 # How far is the metro? STM walking access in Montréal
- https://shrabonidey419.github.io/
+https://shrabonidey419.github.io/464/site/
  500m-walking-accessibility-near-STM-metro-station-Montreal/site/
 
 An interactive web map of the 68 STM metro stations in Montréal. It is the first step toward showing which areas of the city are within a 5-minute walk of a metro station.
@@ -105,3 +105,15 @@ Test 2. I click Mont-Royal metro station.
 
 Test 3. I click a station with no grocery store within a 500m walk.
   Expected: No routes appear. The popup says "No grocery store within 500m," and there is no console error.
+
+  ## Pre-flight report (Lab 7)
+| Check | Result | What I did |
+| --- | --- | --- |
+| 1. Cold start | pass / fault: ... | fixed in commit "..." / known issue |
+| 2. Read every label | ... | ... |
+| 3. Ask twice | ... | ... |
+| 4. The edge | ... | ... |
+| 5. The data does not come | ... | ... |
+| 6. On a phone (size view and my phone) | ... | ... |
+| 7. Mouse in my pocket | ... | ... |
+| 8. Accessibility audit | ... | ... |

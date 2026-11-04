@@ -251,12 +251,12 @@ document.getElementById('stationSearch').addEventListener('submit', function (e)
   }, showStation, 'No metro station matches');
 });
 
-// ---- Station checkboxes: every open grocery store within 500 m of the ticked stations ----
+// ---- Station dropdown: every open grocery store within 500 m of the chosen station ----
 // Straight-line distance, worked out here from the same open stores the search uses.
 const RADIUS_M = 500;
-const picked = {};   // station name -> its 500 m circle, map layers and results
+let picked = null;   // the chosen station's map layers and results
 
-function addPicked(feature) {
+function showPicked(feature) {
   const p = feature.properties;
   const stationLatLng = L.latLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]);
 
@@ -293,49 +293,44 @@ function addPicked(feature) {
     list.appendChild(li);
   });
   results.appendChild(list);
-  document.getElementById('pickerResults').prepend(results);
+  document.getElementById('pickerResults').appendChild(results);
 
-  picked[p.station] = { circle: circle, layer: layer, results: results };
-  fitPicked();
+  picked = { layer: layer, results: results };
+  map.fitBounds(circle.getBounds(), { padding: [30, 30] });
 }
 
-function removePicked(name) {
-  map.removeLayer(picked[name].layer);
-  picked[name].results.remove();
-  delete picked[name];
+function clearPicked() {
+  if (!picked) { return; }
+  map.removeLayer(picked.layer);
+  picked.results.remove();
+  picked = null;
 }
 
-// Zoom to show the circles of every ticked station.
-function fitPicked() {
-  const bounds = L.latLngBounds([]);
-  Object.keys(picked).forEach(function (name) { bounds.extend(picked[name].circle.getBounds()); });
-  map.fitBounds(bounds, { padding: [30, 30] });
-}
-
-// Runs once both files are in, so a tick always has the stores to work with.
-function buildStationChecks() {
-  const box = document.getElementById('stationChecks');
+// Runs once both files are in, so a choice always has the stores to work with.
+function buildStationSelect() {
+  const select = document.getElementById('stationSelect');
   if (stores.length === 0 || stationResults.length === 0) {
-    box.textContent = 'Could not load the stations or grocery stores.';
+    select.options[0].textContent = 'Could not load the stations or grocery stores.';
     return;
   }
-  box.textContent = '';
-  stationResults.slice().sort(function (a, b) {
+  const sorted = stationResults.slice().sort(function (a, b) {
     return a.properties.station.localeCompare(b.properties.station, 'fr');
-  }).forEach(function (f) {
-    const label = document.createElement('label');
-    const check = document.createElement('input');
-    check.type = 'checkbox';
-    check.addEventListener('change', function () {
-      if (check.checked) { addPicked(f); } else { removePicked(f.properties.station); }
-    });
-    label.appendChild(check);
-    label.appendChild(document.createTextNode(' ' + f.properties.station + ' (' + f.properties.line + ')'));
-    box.appendChild(label);
   });
+  select.options[0].textContent = 'Choose a station...';
+  sorted.forEach(function (f, i) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = f.properties.station + ' (' + f.properties.line + ')';
+    select.appendChild(option);
+  });
+  select.addEventListener('change', function () {
+    clearPicked();
+    if (select.value !== '') { showPicked(sorted[select.value]); }
+  });
+  select.disabled = false;
 }
 
-Promise.all([storesLoaded, stationsLoaded]).then(buildStationChecks);
+Promise.all([storesLoaded, stationsLoaded]).then(buildStationSelect);
 
 // Grocery count legend (declared once, added once).
 const groceryLegend = L.control({ position: 'bottomright' });
