@@ -16,11 +16,11 @@ const colours = { Green: '#16e164', Yellow: 'rgb(225, 235, 28)', Orange: 'rgb(25
 
 // Graduated colour for grocery counts, light to dark.
 function colourFor(value) {
-  if (value >= 50) return '#6c6c63';
-  if (value >= 30)  return '#b98f23';
-  if (value >= 10)  return '#f0a313';
-  if (value >= 1)   return '#f08f20';
-  if (value == 0)   return '#f1530f';
+  if (value >= 20) return '#630a3f';
+  if (value >= 10) return '#a51f68';
+  if (value >= 5)  return '#d94f8e';
+  if (value >= 1)  return '#f295bd';
+  if (value == 0)  return '#d9d9d9';   // grey: no stores, not just a low count
   return '#d8cdbc';
 }
 
@@ -94,26 +94,27 @@ fetch('../Data/MetroGrocery500m.geojson')
         });
       },
       onEachFeature: function (feature, layer) {
-        layer.bindPopup('Grocery stores within 500 m: ' + feature.properties.within_500m);
+        layer.bindPopup('Open grocery stores within 500 m: ' + feature.properties.within_500m);
       }
     }).addTo(map);
 
-    layerControl.addOverlay(groceryLayer, 'Groceries within 500 m');
+    layerControl.addOverlay(groceryLayer, 'Open groceries within 500 m');
   })
   .catch(function (err) {
     console.error(err);
   });
 
-// ---- Search: type a grocery store name, see its closest metro station ----
-// GroceryNearestMetro.geojson comes from the notebook (open stores only,
-// straight-line distance to the nearest station).
+// ---- Search: a grocery store's closest metro station, or a station's closest grocery store ----
+// GroceryNearestMetro.geojson and MetroNearestGrocery.geojson come from the
+// notebook (open stores only, straight-line distance).
 const MAX_RESULTS = 10;
-const searchLayer = L.layerGroup().addTo(map);   // the chosen store and its line to the station
+const searchLayer = L.layerGroup().addTo(map);   // the chosen result and its line
 let stores = [];
+let stationResults = [];
 
-// Lower case without accents, so "epicerie" finds "ÉPICERIE".
+// Lower case, no accents or hyphens, so "cote des neiges" finds "Côte-Des-Neiges".
 function plain(text) {
-  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  return text.normalize('NFD').replace(/\p{M}/gu, '').replace(/[-'’]/g, ' ').toLowerCase().trim();
 }
 
 function showStore(feature) {
@@ -135,26 +136,50 @@ function showStore(feature) {
   marker.openPopup();
 }
 
-function search(query) {
+function showStation(feature) {
+  const p = feature.properties;
+  const stationLatLng = L.latLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]);
+  const storeLatLng = L.latLng(p.store_lat, p.store_lon);
+  const note = p.off_island ? '<br><em>The grocery data stops at the Island of Montréal, so a closer store may exist near this station.</em>' : '';
+
+  searchLayer.clearLayers();
+  L.polyline([stationLatLng, storeLatLng], { color: colours[p.line] || '#000', weight: 3, dashArray: '6 6' }).addTo(searchLayer);
+  L.circleMarker(storeLatLng, { radius: 8, color: '#000', weight: 2, fillColor: '#fff', fillOpacity: 1 })
+    .bindPopup('<b>' + p.store + '</b><br>' + p.address)
+    .addTo(searchLayer);
+  const marker = L.circleMarker(stationLatLng, { radius: 8, color: '#000', weight: 2, fillColor: colours[p.line] || '#fff', fillOpacity: 1 })
+    .bindPopup('<b>' + p.station + '</b> (' + p.line + ' line)<br>Closest grocery store: <b>' + p.store + '</b><br>' + p.address + '<br>' + p.dist_m + ' m in a straight line' + note)
+    .addTo(searchLayer);
+
+  map.fitBounds(L.latLngBounds([stationLatLng, storeLatLng]), { padding: [60, 60], maxZoom: 16 });
+  marker.openPopup();
+}
+
+// Shared by both search boxes: list the matches and show the first on the map.
+function search(query, features, field, labelFor, show, noMatch) {
   const list = document.getElementById('searchResults');
   list.innerHTML = '';
   const q = plain(query);
   if (!q) return;
 
-  const matches = stores.filter(function (f) { return plain(f.properties.name).includes(q); });
+  const matches = features.filter(function (f) { return plain(f.properties[field]).includes(q); });
+  // A full name comes first, so "Sherbrooke" shows Sherbrooke before Longueuil- U. De Sherbrooke.
+  matches.sort(function (a, b) { return (plain(b.properties[field]) === q) - (plain(a.properties[field]) === q); });
+
   if (matches.length === 0) {
-    list.innerHTML = '<li>No open grocery store matches "' + query.replace(/</g, '&lt;') + '".</li>';
+    const none = document.createElement('li');
+    none.textContent = noMatch + ' "' + query + '".';
+    list.appendChild(none);
     searchLayer.clearLayers();
     return;
   }
 
   matches.slice(0, MAX_RESULTS).forEach(function (f) {
-    const p = f.properties;
     const li = document.createElement('li');
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = p.name + ', ' + p.address + ' → ' + p.station + ' (' + p.dist_m + ' m)';
-    button.addEventListener('click', function () { showStore(f); });
+    button.textContent = labelFor(f.properties);
+    button.addEventListener('click', function () { show(f); });
     li.appendChild(button);
     list.appendChild(li);
   });
@@ -163,7 +188,7 @@ function search(query) {
     more.textContent = (matches.length - MAX_RESULTS) + ' more: type more of the name to narrow it down.';
     list.appendChild(more);
   }
-  showStore(matches[0]);
+  show(matches[0]);
 }
 
 // Station name -> position, for drawing the line from the store to its station.
@@ -176,7 +201,7 @@ fetch('../Data/MetroStops.geojson')
     });
   });
 
-fetch('../Data/GroceryNearestMetro.geojson')
+const storesLoaded = fetch('../Data/GroceryNearestMetro.geojson')
   .then(function (response) {
     if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading GroceryNearestMetro.geojson'); }
     return response.json();
@@ -192,17 +217,132 @@ fetch('../Data/GroceryNearestMetro.geojson')
     console.error(err);
   });
 
+const stationsLoaded = fetch('../Data/MetroNearestGrocery.geojson')
+  .then(function (response) {
+    if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading MetroNearestGrocery.geojson'); }
+    return response.json();
+  })
+  .then(function (data) {
+    stationResults = data.features;
+    // Fill the station box's suggestions, in alphabetical order.
+    const names = document.getElementById('stationNames');
+    stationResults.map(function (f) { return f.properties.station; }).sort().forEach(function (name) {
+      const option = document.createElement('option');
+      option.value = name;
+      names.appendChild(option);
+    });
+  })
+  .catch(function (err) {
+    document.getElementById('searchResults').innerHTML = '<li>Could not load the metro stations for search.</li>';
+    console.error(err);
+  });
+
 document.getElementById('storeSearch').addEventListener('submit', function (e) {
   e.preventDefault();
-  search(document.getElementById('storeName').value);
+  search(document.getElementById('storeName').value, stores, 'name', function (p) {
+    return p.name + ', ' + p.address + ' → ' + p.station + ' (' + p.dist_m + ' m)';
+  }, showStore, 'No open grocery store matches');
 });
+
+document.getElementById('stationSearch').addEventListener('submit', function (e) {
+  e.preventDefault();
+  search(document.getElementById('stationName').value, stationResults, 'station', function (p) {
+    return p.station + ' → ' + p.store + ', ' + p.address + ' (' + p.dist_m + ' m)';
+  }, showStation, 'No metro station matches');
+});
+
+// ---- Station checkboxes: every open grocery store within 500 m of the ticked stations ----
+// Straight-line distance, worked out here from the same open stores the search uses.
+const RADIUS_M = 500;
+const picked = {};   // station name -> its 500 m circle, map layers and results
+
+function addPicked(feature) {
+  const p = feature.properties;
+  const stationLatLng = L.latLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]);
+
+  const near = stores.map(function (f) {
+    const latLng = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]);
+    return { name: f.properties.name, address: f.properties.address, latLng: latLng, dist: map.distance(stationLatLng, latLng) };
+  }).filter(function (s) {
+    return s.dist <= RADIUS_M;
+  }).sort(function (a, b) {
+    return a.dist - b.dist;
+  });
+
+  const layer = L.layerGroup().addTo(map);
+  const circle = L.circle(stationLatLng, { radius: RADIUS_M, color: colours[p.line] || '#000', weight: 2, fillOpacity: 0.1, interactive: false }).addTo(layer);
+  near.forEach(function (s) {
+    L.circleMarker(s.latLng, { radius: 6, color: '#000', weight: 2, fillColor: '#fff', fillOpacity: 1 })
+      .bindPopup('<b>' + s.name + '</b><br>' + s.address + '<br>' + Math.round(s.dist) + ' m from ' + p.station + ' in a straight line')
+      .addTo(layer);
+  });
+
+  const results = document.createElement('div');
+  const heading = document.createElement('h4');
+  heading.textContent = p.station + ': ' + near.length + ' open grocery ' + (near.length === 1 ? 'store' : 'stores') + ' within ' + RADIUS_M + ' m';
+  results.appendChild(heading);
+  if (near.length === 0 && p.off_island) {
+    const note = document.createElement('p');
+    note.textContent = 'The grocery data stops at the Island of Montréal, so stores near this station may be missing.';
+    results.appendChild(note);
+  }
+  const list = document.createElement('ul');
+  near.forEach(function (s) {
+    const li = document.createElement('li');
+    li.textContent = s.name + ', ' + s.address + ' (' + Math.round(s.dist) + ' m)';
+    list.appendChild(li);
+  });
+  results.appendChild(list);
+  document.getElementById('pickerResults').prepend(results);
+
+  picked[p.station] = { circle: circle, layer: layer, results: results };
+  fitPicked();
+}
+
+function removePicked(name) {
+  map.removeLayer(picked[name].layer);
+  picked[name].results.remove();
+  delete picked[name];
+}
+
+// Zoom to show the circles of every ticked station.
+function fitPicked() {
+  const bounds = L.latLngBounds([]);
+  Object.keys(picked).forEach(function (name) { bounds.extend(picked[name].circle.getBounds()); });
+  map.fitBounds(bounds, { padding: [30, 30] });
+}
+
+// Runs once both files are in, so a tick always has the stores to work with.
+function buildStationChecks() {
+  const box = document.getElementById('stationChecks');
+  if (stores.length === 0 || stationResults.length === 0) {
+    box.textContent = 'Could not load the stations or grocery stores.';
+    return;
+  }
+  box.textContent = '';
+  stationResults.slice().sort(function (a, b) {
+    return a.properties.station.localeCompare(b.properties.station, 'fr');
+  }).forEach(function (f) {
+    const label = document.createElement('label');
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.addEventListener('change', function () {
+      if (check.checked) { addPicked(f); } else { removePicked(f.properties.station); }
+    });
+    label.appendChild(check);
+    label.appendChild(document.createTextNode(' ' + f.properties.station + ' (' + f.properties.line + ')'));
+    box.appendChild(label);
+  });
+}
+
+Promise.all([storesLoaded, stationsLoaded]).then(buildStationChecks);
 
 // Grocery count legend (declared once, added once).
 const groceryLegend = L.control({ position: 'bottomright' });
 groceryLegend.onAdd = function () {
   const div = L.DomUtil.create('div', 'legend');
-  const rows = [[50, '50 or more'], [30, '30 to 49'], [20, '20 to 29'], [1, '1 to 20'], [0, 'none']];
-  div.innerHTML = '<strong>Grocery stores within 500 m (count)</strong><br>' +
+  const rows = [[20, '20 or more'], [10, '10 to 19'], [5, '5 to 9'], [1, '1 to 4'], [0, 'none']];
+  div.innerHTML = '<strong>Open grocery stores within 500 m (count)</strong><br>' +
     rows.map(function (r) {
       return '<span style="background:' + colourFor(r[0]) + '"></span>' + r[1];
     }).join('<br>');

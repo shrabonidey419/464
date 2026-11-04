@@ -69,20 +69,20 @@ Add 5-minute walking areas around each station so the popup can show which stati
 
 ## Layer 2: Grocery stores within 500 m of each metro station
 
-**How it was computed:** In my notebook, I drew a 500 m buffer around each STM metro station and counted the grocery stores from the City of Montréal's food establishments data (receipt below) that fall inside it. Before counting, I filtered the data in QGIS to keep only grocery stores. The count is stored as `within_500m` in `MetroGrocery500m.geojson`.
+**How it was computed:** In my notebook, I drew a 500 m buffer around each STM metro station and counted the grocery stores from the City of Montréal's food establishments data (receipt below) that fall inside it. Before counting, I filtered the data in QGIS to keep only grocery stores, and the notebook keeps only the open ones (`statut` = `Ouvert`), so closed stores are not counted. The count is stored as `within_500m` in `MetroGrocery500m.geojson`.
 
 **Grocery data receipt**
 - **Title and publisher:** *Établissements alimentaires* (Food establishments), Ville de Montréal
 - **Link:** https://donnees.montreal.ca/en/dataset/etablissements-alimentaires
 - **Licence:** Creative Commons Attribution 4.0 International (CC BY 4.0)
 - **Date accessed:** October 23, 2026
-- **What I changed:** The download has 54,783 food establishments of all kinds (restaurants, daycares, vending machines, etc.). In QGIS, I filtered the `type` field to keep only grocery stores ([TYPES YOU KEPT, e.g., Épicerie, Supermarché]) and saved the result as a new layer.
+- **What I changed:** The download has 54,783 food establishments of all kinds (restaurants, daycares, vending machines, etc.). In QGIS, I filtered the `type` field to keep only grocery stores ([TYPES YOU KEPT, e.g., Épicerie, Supermarché]) and saved the result as a new layer. Of the 4,569 stores in that layer, 1,285 are open, and 58 of those have no coordinates, which leaves 1,227 on the map.
 
-**Total check:** The layer has [N] stations, the same as `MetroStops.geojson` ([N]), so no station was dropped. A store near two stations is counted for both, so the counts are not meant to add up to the [TOTAL] grocery stores in the source data.
+**Total check:** The layer has 68 stations, the same as `MetroStops.geojson` (68), so no station was dropped. A store near two stations is counted for both, so the counts are not meant to add up to the 1,227 open grocery stores with a location.
 
 ## Reading the map
 
-Darker circles are metro stations with more grocery stores within 500 m of the station, measured in a straight line.
+Darker circles are metro stations with more open grocery stores within 500 m of the station, measured in a straight line.
 
 
 

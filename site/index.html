@@ -17,7 +17,7 @@
     <p>Students and residents in Montreal who want to check how easy it is to walk to the metro.</p>
 
     <h3>What you can do here</h3>
-    <p>click the box to see only the metro stations you can use with a wheelchair, and click any station to see its line and access.</p>
+    <p>Click the box to see only the metro stations you can use with a wheelchair, and click any station to see its line and access. Use the search boxes to find the closest metro station to a grocery store, or the closest open grocery store to a metro station. Tick a station in the station list to see every open grocery store within 500 m of it.</p>
 
     <label class="control">
       <input type="checkbox" id="accessibleOnly" />
@@ -27,15 +27,28 @@
 
     <form id="storeSearch" class="control">
       <label for="storeName">Find the closest metro station to a grocery store:</label>
-      <input type="search" id="storeName" placeholder="e.g. Metro, IGA, Couche-Tard" autocomplete="off" />
+      <input type="search" id="storeName" placeholder="e.g. Walmart, Couche-Tard" autocomplete="off" />
+      <button type="submit">Search</button>
+    </form>
+    <form id="stationSearch" class="control">
+      <label for="stationName">Find the closest grocery store to a metro station:</label>
+      <input type="search" id="stationName" list="stationNames" placeholder="e.g. Namur, Berri-UQAM" autocomplete="off" />
+      <datalist id="stationNames"></datalist>
       <button type="submit">Search</button>
     </form>
     <ul id="searchResults"></ul>
 
+    <fieldset id="stationPicker" class="control">
+      <legend>Tick a metro station to see the open grocery stores within 500 m:</legend>
+      <div id="stationChecks">Loading stations...</div>
+    </fieldset>
+    <div id="pickerResults"></div>
+
     <h3>Not in this iteration</h3>
     <ul>
       <li><strong>Real walk times on the street network:</strong> still working on walking routes from the Google API.</li>
-      <li><strong>Grocery stores and barriers:</strong> needs a second dataset, planned for later.</li>
+      <li><strong>Walking barriers:</strong> highways and other barriers are not measured yet. Search distances and the 500 m circles are straight lines, not walks.</li>
+      <li><strong>A stricter grocery list:</strong> the city's grocery category also includes kiosks and pharmacies, and the data stops at the Island of Montréal, so stations in Laval and Longueuil may have a closer store than the one shown.</li>
       <li><strong>One borough focus:</strong> I kept the whole metro network to keep the pipeline simple; next I will focus on Côte-des-Neiges–NDG, where many students live and the Décarie expressway creates walking barriers.</li>
       <li><strong>Transfer stations:</strong> stations like Berri-UQAM and Lionel-Groulx appear under one line only, because that is how the STM file stores them.</li>
     </ul>
@@ -43,6 +56,7 @@
     <h3>Where this comes from</h3>
     <ul>
       <li><a href="https://www.donneesquebec.ca/recherche/fr/dataset/a0073997-3a02-4c34-8acf-758a2ee950f4">STM bus and metro lines and stops</a>, Société de transport de Montréal. Licence: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Accessed 3 October 2026.</li>
+      <li><a href="https://donnees.montreal.ca/en/dataset/etablissements-alimentaires">Établissements alimentaires (food establishments)</a>, Ville de Montréal. Licence: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Accessed 23 October 2026. Filtered to the grocery type (Épicerie) and to open stores.</li>
       <li>Basemap © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.</li>
     </ul>
   </header>
