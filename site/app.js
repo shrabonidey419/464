@@ -240,14 +240,14 @@ const stationsLoaded = fetch('../Data/MetroNearestGrocery.geojson')
 document.getElementById('storeSearch').addEventListener('submit', function (e) {
   e.preventDefault();
   search(document.getElementById('storeName').value, stores, 'name', function (p) {
-    return p.name + ', ' + p.address + ' → ' + p.station + ' (' + p.dist_m + ' m)';
+    return p.name + ', ' + p.address + ' → ' + p.station + ' (' + p.dist_m + ' m in a straight line)';
   }, showStore, 'No open grocery store matches');
 });
 
 document.getElementById('stationSearch').addEventListener('submit', function (e) {
   e.preventDefault();
   search(document.getElementById('stationName').value, stationResults, 'station', function (p) {
-    return p.station + ' → ' + p.store + ', ' + p.address + ' (' + p.dist_m + ' m)';
+    return p.station + ' → ' + p.store + ', ' + p.address + ' (' + p.dist_m + ' m in a straight line)';
   }, showStation, 'No metro station matches');
 });
 
@@ -289,7 +289,7 @@ function showPicked(feature) {
   const list = document.createElement('ul');
   near.forEach(function (s) {
     const li = document.createElement('li');
-    li.textContent = s.name + ', ' + s.address + ' (' + Math.round(s.dist) + ' m)';
+    li.textContent = s.name + ', ' + s.address + ' (' + Math.round(s.dist) + ' m in a straight line)';
     list.appendChild(li);
   });
   results.appendChild(list);

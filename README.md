@@ -98,7 +98,7 @@ My edge case is a station with no grocery store within a 500m walk; the popup wi
 
 
 Test 1. I click Namur metro station.
-  Expected: Walking routes to the 3 nearest grocery stores appear. The Walmart route is red, and its popup shows a detour ratio above 1.5.
+  Expected: Walking routes to the 6 nearest grocery stores appear.
 
 Test 2. I click Mont-Royal metro station.
   Expected: The previous routes clear. New routes appear, mostly green, with ratios near 1.2 shown in their popups.
@@ -106,14 +106,14 @@ Test 2. I click Mont-Royal metro station.
 Test 3. I click a station with no grocery store within a 500m walk.
   Expected: No routes appear. The popup says "No grocery store within 500m," and there is no console error.
 
-  ## Pre-flight report (Lab 7)
+## Pre-flight report (Lab 7)
 | Check | Result | What I did |
 | --- | --- | --- |
-| 1. Cold start | pass / fault: ... | fixed in commit "..." / known issue |
-| 2. Read every label | ... | ... |
+| 1. Cold start | Pass: I did not have any error | No fix needed |
+| 2. Read every label | Fault: the grocery store and metro station lists showed "(250 m)", which can be read as a walking distance, but it is a straight line | Fixed: the lists now say "m in a straight line" |
 | 3. Ask twice | ... | ... |
-| 4. The edge | ... | ... |
+| 4. The edge | Pass: the page shows "No open grocery store matches "hhh"" and "No metro station matches "xxx"" | I typed "hhh" and "xxx" in the search boxes. No fix needed |
 | 5. The data does not come | ... | ... |
-| 6. On a phone (size view and my phone) | ... | ... |
+| 6. On a phone (size view and my phone) | It works on my phone | ... |
 | 7. Mouse in my pocket | ... | ... |
 | 8. Accessibility audit | ... | ... |
