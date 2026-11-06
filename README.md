@@ -123,4 +123,4 @@ Test 3. I click xxx, which has no grocery store within 500 m.
 | 5. The data does not come | [Pass/Fault]. [What happened] | [Steps you took] |
 | 6. On a phone | Pass. What checked search box and popups fit the screen and work by touch. | Tested in the browser's phone-size view and on my own phone.  "No fix needed." |
 | 7. Mouse in my pocket | [Pass]. [What happened : it change the differnt position] | 
-| 8. Accessibility audit | [Pass/Fault]. [Score or main issues] | [Tool used and any fixes] |
+ | 8. Accessibility audit | Fault. Lighthouse score 97. Two issues: headings skipped a level (an h3 with no h2 before it), and the page had no main landmark. | Ran Lighthouse (Accessibility only) in DevTools. Fixed: changed the h3 to an h2 and wrapped the search panel and map in a <main> element. Re-ran in an incognito window: 100 . |[there had an issue in  css because there had not main  and h2 .I  fixed it by using claude ] |
