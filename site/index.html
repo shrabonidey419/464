@@ -9,14 +9,15 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <main>
   <header>
     <h1>How far is the metro? Walking access to STM stations in Montréal</h1>
     <p>Many students and residents in Montreal rely on the metro every day, but a station that looks close on a map can be a long or difficult walk. This map helps them see which areas have good walking access to an STM metro station and which do not.</p>
 
-    <h3>This map is for</h3>
+    <h2>This map is for</h2>
     <p>Students and residents in Montreal who want to check how easy it is to walk to the metro.</p>
 
-    <h3>What you can do here</h3>
+    <h2>What you can do here</h2>
     <p>Click the box to see only the metro stations you can use with a wheelchair, and click any station to see its line and access. Use the search boxes to find the closest metro station to a grocery store, or the closest open grocery store to a metro station. Choose a station from the dropdown to see every open grocery store within 500 m of it.</p>
 
     <label class="control">
@@ -46,7 +47,7 @@
     </div>
     <div id="pickerResults"></div>
 
-    <h3>Not in this iteration</h3>
+    <h2>Not in this iteration</h2>
     <ul>
       <li><strong>Real walk times on the street network:</strong> still working on walking routes from the Google API.</li>
       <li><strong>Walking barriers:</strong> highways and other barriers are not measured yet. Search distances and the 500 m circles are straight lines, not walks.</li>
@@ -55,7 +56,7 @@
       <li><strong>Transfer stations:</strong> stations like Berri-UQAM and Lionel-Groulx appear under one line only, because that is how the STM file stores them.</li>
     </ul>
 
-    <h3>Where this comes from</h3>
+    <h2>Where this comes from</h2>
     <ul>
       <li><a href="https://www.donneesquebec.ca/recherche/fr/dataset/a0073997-3a02-4c34-8acf-758a2ee950f4">STM bus and metro lines and stops</a>, Société de transport de Montréal. Licence: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Accessed 3 October 2026.</li>
       <li><a href="https://donnees.montreal.ca/en/dataset/etablissements-alimentaires">Établissements alimentaires (food establishments)</a>, Ville de Montréal. Licence: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Accessed 23 October 2026. Filtered to the grocery type (Épicerie) and to open stores.</li>
@@ -64,6 +65,7 @@
   </header>
 
   <div id="map"></div>
+  </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>

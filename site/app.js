@@ -278,7 +278,7 @@ function showPicked(feature) {
   });
 
   const results = document.createElement('div');
-  const heading = document.createElement('h4');
+  const heading = document.createElement('h3');
   heading.textContent = p.station + ': ' + near.length + ' open grocery ' + (near.length === 1 ? 'store' : 'stores') + ' within ' + RADIUS_M + ' m';
   results.appendChild(heading);
   if (near.length === 0 && p.off_island) {

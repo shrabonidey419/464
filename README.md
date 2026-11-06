@@ -97,23 +97,30 @@ I will know it works when Namur station shows the Walmart route flagged red.
 My edge case is a station with no grocery store within a 500m walk; the popup will say "No grocery store within 500m."
 
 
-Test 1. I click Namur metro station.
-  Expected: Walking routes to the 6 nearest grocery stores appear.
+Test 1. I type "Namur" in the search box and select Namur metro station.
+  Expected: The map zooms to Namur and draws a 500 m buffer around it. Up to
+  6 of the nearest grocery stores inside the buffer appear as points. When I
+  click a grocery store, the popup shows its name and its distance (in m)
+  from Namur station.
 
-Test 2. I click Mont-Royal metro station.
-  Expected: The previous routes clear. New routes appear, mostly green, with ratios near 1.2 shown in their popups.
+Test 2. I selected another metro station Mont-Royal.
+  Expected: Namur's buffer, grocery points and distance line are removed.
+  A new 500 m buffer, grocery points and distances appear for Mont-Royal.
 
-Test 3. I click a station with no grocery store within a 500m walk.
-  Expected: No routes appear. The popup says "No grocery store within 500m," and there is no console error.
+Test 3. I click xxx, which has no grocery store within 500 m.
+  Expected: No grocery points appear. The popup says "No grocery store
+  within 500 m." The browser console shows no errors.
 
 ## Pre-flight report (Lab 7)
+## Pre-flight report (Lab 7)
+
 | Check | Result | What I did |
 | --- | --- | --- |
-| 1. Cold start | Pass: I did not have any error | No fix needed |
-| 2. Read every label | Fault: the grocery store and metro station lists showed "(250 m)", which can be read as a walking distance, but it is a straight line | Fixed: the lists now say "m in a straight line" |
-| 3. Ask twice | ... | ... |
-| 4. The edge | Pass: the page shows "No open grocery store matches "hhh"" and "No metro station matches "xxx"" | I typed "hhh" and "xxx" in the search boxes. No fix needed |
-| 5. The data does not come | ... | ... |
-| 6. On a phone (size view and my phone) | It works on my phone | ... |
-| 7. Mouse in my pocket | ... | ... |
-| 8. Accessibility audit | ... | ... |
+| 1. Cold start | Pass. The page loaded with no console errors. | Opened the page in a fresh private window with the console open. No fix needed. |
+| 2. Read every label | Fault. The grocery store and metro station lists showed distances as "(250 m)", which reads like a walking distance. The app measures straight-line distance. | Fixed. The lists now say "m in a straight line." |
+| 3. Ask twice | [Pass/Fault]. [What happened] | [Steps you took] |
+| 4. The edge | Pass. The page shows "No open grocery store matches 'hhh'" and "No metro station matches 'xxx'." | Typed "hhh" and "xxx" in the search boxes. No fix needed. |
+| 5. The data does not come | [Pass/Fault]. [What happened] | [Steps you took] |
+| 6. On a phone | Pass. What checked search box and popups fit the screen and work by touch. | Tested in the browser's phone-size view and on my own phone.  "No fix needed." |
+| 7. Mouse in my pocket | [Pass]. [What happened : it change the differnt position] | 
+| 8. Accessibility audit | [Pass/Fault]. [Score or main issues] | [Tool used and any fixes] |
