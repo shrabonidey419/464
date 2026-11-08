@@ -22,7 +22,9 @@ map.getPane('pickedArea').style.pointerEvents = 'none';
 
 // PART 8: one colour per metro line.
 const colours = { Green: '#16e164', Yellow: 'rgb(225, 235, 28)', Orange: 'rgb(255, 128, 0)', Blue: '#0072ce' };
-const AREA_COLOUR = '#1F2D5A';   // the walk areas, in the page's navy
+const AREA_COLOUR = '#1F2D5A';   // the walk areas, in the page's navy what is the function of this ? is it for metro legend color?
+
+
 
 // Graduated colour for grocery counts, light to dark.
 function colourFor(value) {
@@ -157,10 +159,19 @@ function restack() {
 }
 
 // ---- One legend that follows the layer switcher ----
+// It folds up behind a "Legend" button, closed on a phone so it does not cover the small map.
 let legendDiv = null;
+let legendBody = null;
 const legend = L.control({ position: 'bottomright' });
 legend.onAdd = function () {
   legendDiv = L.DomUtil.create('div', 'legend');
+  const details = L.DomUtil.create('details', '', legendDiv);
+  details.open = !window.matchMedia('(max-width: 800px)').matches;
+  L.DomUtil.create('summary', '', details).textContent = 'Legend';
+  legendBody = L.DomUtil.create('div', 'legend-body', details);
+  // Tapping or scrolling the legend should not drag or zoom the map underneath.
+  L.DomEvent.disableClickPropagation(legendDiv);
+  L.DomEvent.disableScrollPropagation(legendDiv);
   updateLegend();
   return legendDiv;
 };
@@ -183,7 +194,7 @@ function updateLegend() {
     parts.push('<span class="area" style="background:' + AREA_COLOUR + '"></span>Within a ' + RADIUS_M + ' m walk of ' +
       (accessibleBox.checked ? 'a wheelchair-accessible station' : 'a station'));
   }
-  legendDiv.innerHTML = parts.join('<br><br>');
+  legendBody.innerHTML = parts.join('<br><br>');
   legendDiv.style.display = parts.length ? '' : 'none';
 }
 

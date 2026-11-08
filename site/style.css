@@ -30,3 +30,10 @@ header a { color: #DCBD23; }
 .legend span.ring { background: #fff; border-width: 3px; }                                       /* metro line: the ring colour */
 .legend span.dot { width: 7px; height: 7px; margin: 0 8px 0 3px; background: #fff; border-color: #222; }   /* wheelchair accessible */
 .legend span.area { border: none; border-radius: 0; opacity: 0.4; }                              /* the walk areas, as see-through as on the map */
+.legend summary { cursor: pointer; font-weight: bold; }
+.legend details[open] summary { margin-bottom: 4px; }
+/* On a phone: smaller text, and if the open legend is taller than the map, it scrolls inside itself. */
+@media (max-width: 800px) {
+  .legend { font-size: 12px; padding: 4px 8px; }
+  .legend-body { max-height: calc(50vh - 90px); overflow-y: auto; }
+}
