@@ -20,9 +20,13 @@ header a { color: #DCBD23; }
 #storeSearch label, #stationSearch label { display: block; }
 #storeSearch input, #stationSearch input { margin: 4px 4px 0 0; padding: 4px 6px; width: 240px; max-width: 70%; }
 #searchResults { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
-#searchResults button { background: none; border: none; padding: 0; color: #fff; text-decoration: underline; cursor: pointer; font: inherit; text-align: left; }
+#searchResults button, #pickerResults button { background: none; border: none; padding: 0; color: #fff; text-decoration: underline; cursor: pointer; font: inherit; text-align: left; }
 #stationPicker { margin: 10px 0 0; padding: 6px 10px; border: 1px solid #DCBD23; font-size: 14px; }
 #stationPicker label { display: block; }
 #stationSelect { margin-top: 4px; padding: 4px 6px; width: 100%; }
 #pickerResults h3 { margin: 10px 0 2px; font-size: 14px; color: #DCBD23; }
-.legend span { display: inline-block; width: 10px; height: 10px; border: 1px solid #3d3333; border-radius: 50%; margin-right: 6px; }
+#pickerResults ul { margin: 4px 0 0; padding-left: 18px; font-size: 14px; }
+.legend span { display: inline-block; box-sizing: border-box; width: 12px; height: 12px; border: 1px solid #3d3333; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.legend span.ring { background: #fff; border-width: 3px; }                                       /* metro line: the ring colour */
+.legend span.dot { width: 7px; height: 7px; margin: 0 8px 0 3px; background: #fff; border-color: #222; }   /* wheelchair accessible */
+.legend span.area { border: none; border-radius: 0; opacity: 0.4; }                              /* the walk areas, as see-through as on the map */

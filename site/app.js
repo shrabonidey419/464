@@ -9,108 +9,241 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 
-const LIMIT = Infinity;   // PART 6: all of them
+// Drawing order, bottom to top: basemap, walk areas, the dropdown's chosen walk area,
+// then (on the default canvas) routes, stations, the dropdown's stores and the search result.
+// The two area panes ignore the mouse, so clicks reach the stations above them.
+map.createPane('walkAreas');
+map.getPane('walkAreas').style.zIndex = 350;
+map.getPane('walkAreas').style.opacity = 0.4;         // the whole pane is see-through, so overlapping areas do not get darker
+map.getPane('walkAreas').style.pointerEvents = 'none';
+map.createPane('pickedArea');
+map.getPane('pickedArea').style.zIndex = 360;
+map.getPane('pickedArea').style.pointerEvents = 'none';
 
 // PART 8: one colour per metro line.
 const colours = { Green: '#16e164', Yellow: 'rgb(225, 235, 28)', Orange: 'rgb(255, 128, 0)', Blue: '#0072ce' };
+const AREA_COLOUR = '#1F2D5A';   // the walk areas, in the page's navy
 
 // Graduated colour for grocery counts, light to dark.
 function colourFor(value) {
-  if (value >= 20) return '#630a3f';
+  if (value >= 15) return '#630a3f';
   if (value >= 10) return '#a51f68';
   if (value >= 5)  return '#d94f8e';
   if (value >= 1)  return '#f295bd';
   if (value == 0)  return '#d9d9d9';   // grey: no stores, not just a low count
   return '#d8cdbc';
 }
+const COUNT_CLASSES = [[15, '15 or more'], [10, '10 to 14'], [5, '5 to 9'], [1, '1 to 4'], [0, 'none']];
 
-// Layer control, shared by every overlay below.
+// ---- Walking distances ----
+// Every distance below is a real walk on the OpenStreetMap street network, worked out in
+// notebooks/walkNetwork.ipynb. Walks longer than WALK_LIMIT_M were not worked out: for those
+// the files leave walk_m empty (null) and keep the straight-line distance.
+const RADIUS_M = 500;          // the walk areas and the grocery counts
+const WALK_LIMIT_M = 1600;     // about a 20-minute walk
+const WALK_M_PER_MIN = 80;     // about 4.8 km/h, an average walking pace
+const DETOUR_COLOUR = '#d7191c';   // a walk more than 1.5 times the straight line
+
+function minutes(m) {
+  return Math.max(1, Math.round(m / WALK_M_PER_MIN));
+}
+
+// "420 m walk, about 5 min (300 m in a straight line)", plus the detour when there is one.
+function walkText(p) {
+  if (p.walk_m === null) {
+    return 'more than a ' + WALK_LIMIT_M + ' m walk (' + p.straight_m + ' m in a straight line)';
+  }
+  let text = p.walk_m + ' m walk, about ' + minutes(p.walk_m) + ' min (' + p.straight_m + ' m in a straight line)';
+  if (p.detour_flag) { text += ', a detour: ' + p.detour + ' times the straight line'; }
+  return text;
+}
+
+// The same, as popup HTML, with the detour in red.
+function walkHtml(p) {
+  if (p.walk_m === null) {
+    return 'More than a ' + WALK_LIMIT_M + ' m walk, so the straight line is shown: ' + p.straight_m + ' m';
+  }
+  let html = p.walk_m + ' m walk, about ' + minutes(p.walk_m) + ' min<br>' + p.straight_m + ' m in a straight line';
+  if (p.detour_flag) {
+    html += '<br><b style="color:' + DETOUR_COLOUR + '">Detour: the walk is ' + p.detour + ' times the straight line</b>';
+  }
+  return html;
+}
+
+// Draw the walk (red when it is a detour), or a dashed straight line when there is no walk.
+// lonLats is the route as [[lon, lat], ...], or null.
+function drawRoute(layer, lonLats, p, from, to, colour) {
+  if (!lonLats) {
+    return L.polyline([from, to], { color: colour, weight: 3, dashArray: '6 6', interactive: false }).addTo(layer);
+  }
+  const latLngs = lonLats.map(function (c) { return L.latLng(c[1], c[0]); });
+  L.polyline(latLngs, { color: '#000', weight: 6, opacity: 0.5, interactive: false }).addTo(layer);   // dark edge, so a yellow line shows
+  return L.polyline(latLngs, { color: p.detour_flag ? DETOUR_COLOUR : colour, weight: 3, interactive: false }).addTo(layer);
+}
+
+// ---- The two map layers: metro stations and 5-minute walk areas ----
 const layerControl = L.control.layers(null, {}, { collapsed: false }).addTo(map);
+const wheelchair = {};   // station name -> 'Yes' or 'No', from MetroStops.geojson
 
-// ---- Metro stations ----
-fetch('../Data/MetroStops.geojson')
+// PART 7: one symbol per station. Fill = open grocery stores within a 500 m walk,
+// ring = metro line, white centre dot = wheelchair accessible.
+function stationSymbol(feature, latlng) {
+  const p = feature.properties;
+  const parts = [
+    L.circleMarker(latlng, { radius: 10, stroke: false, fillColor: '#222', fillOpacity: 1 }),   // thin dark edge, so a yellow ring shows on a light map
+    L.circleMarker(latlng, { radius: 7.5, color: colours[p.line] || '#5639ce', weight: 3, opacity: 1, fillColor: colourFor(p.walk_count), fillOpacity: 1 })
+  ];
+  if (wheelchair[p.station] === 'Yes') {
+    parts.push(L.circleMarker(latlng, { radius: 2.5, color: '#222', weight: 1, fillColor: '#fff', fillOpacity: 1 }));
+  }
+  return L.featureGroup(parts);
+}
+
+const stationLayer = L.geoJSON(null, {
+  pointToLayer: stationSymbol,
+  // PART 8: a popup built from the properties the notebooks wrote.
+  onEachFeature: function (feature, layer) {
+    const p = feature.properties;
+    layer.bindPopup('<b>' + p.station + '</b><br>Line: ' + p.line + '<br>Wheelchair access: ' + (wheelchair[p.station] || 'unknown') +
+      '<br>Open grocery stores within a ' + RADIUS_M + ' m walk: ' + p.walk_count +
+      '<br>Within ' + RADIUS_M + ' m in a straight line: ' + p.straight_count);
+  }
+}).addTo(map);
+layerControl.addOverlay(stationLayer, 'Metro stations');
+
+// Every station's walk area together: the blank space between them is more than a 5-minute walk
+// from the metro. Off when the page opens.
+const walkAreaLayer = L.geoJSON(null, {
+  pane: 'walkAreas',
+  renderer: L.svg({ pane: 'walkAreas' }),
+  interactive: false,
+  style: { stroke: false, fillColor: AREA_COLOUR, fillOpacity: 1 }
+});
+layerControl.addOverlay(walkAreaLayer, '5-minute walk areas (500 m)');
+
+// ---- Wheelchair checkbox: show only the stations you can use with a wheelchair ----
+// It filters the stations and, when that layer is on, their walk areas.
+const accessibleBox = document.getElementById('accessibleOnly');
+const filtered = [{ layer: stationLayer, features: [] }, { layer: walkAreaLayer, features: [] }];
+
+function accessibleOnly(features) {
+  if (!accessibleBox.checked) { return features; }
+  return features.filter(function (f) { return wheelchair[f.properties.station] === 'Yes'; });
+}
+
+function applyAccessFilter() {
+  filtered.forEach(function (s) {
+    s.layer.clearLayers();
+    s.layer.addData(accessibleOnly(s.features));
+  });
+  restack();
+  updateLegend();
+  const access = Object.values(wheelchair);
+  if (access.length === 0) { return; }   // the stations are not in yet
+  const yes = access.filter(function (a) { return a === 'Yes'; }).length;
+  document.getElementById('status').textContent = accessibleBox.checked
+    ? yes + ' of ' + access.length + ' metro stations shown: only the wheelchair-accessible ones'
+    : access.length + ' of ' + access.length + ' metro stations shown';
+}
+
+accessibleBox.addEventListener('change', applyAccessFilter);
+
+// Keep the canvas in order after anything is drawn: stations above routes,
+// the dropdown's stores above the stations, the search result above everything.
+function restack() {
+  stationLayer.bringToFront();
+  if (picked) { picked.markers.bringToFront(); }
+  searchLayer.bringToFront();
+}
+
+// ---- One legend that follows the layer switcher ----
+let legendDiv = null;
+const legend = L.control({ position: 'bottomright' });
+legend.onAdd = function () {
+  legendDiv = L.DomUtil.create('div', 'legend');
+  updateLegend();
+  return legendDiv;
+};
+
+function updateLegend() {
+  if (!legendDiv) { return; }
+  const parts = [];
+  if (map.hasLayer(stationLayer)) {
+    parts.push('<strong>Metro stations</strong><br>Fill: open grocery stores within a ' + RADIUS_M + ' m walk<br>' +
+      COUNT_CLASSES.map(function (r) {
+        return '<span style="background:' + colourFor(r[0]) + '"></span>' + r[1];
+      }).join('<br>') +
+      '<br>Ring: metro line<br>' +
+      Object.keys(colours).map(function (k) {
+        return '<span class="ring" style="border-color:' + colours[k] + '"></span>' + k;
+      }).join('<br>') +
+      '<br><span class="dot"></span>White dot: wheelchair accessible');
+  }
+  if (map.hasLayer(walkAreaLayer)) {
+    parts.push('<span class="area" style="background:' + AREA_COLOUR + '"></span>Within a ' + RADIUS_M + ' m walk of ' +
+      (accessibleBox.checked ? 'a wheelchair-accessible station' : 'a station'));
+  }
+  legendDiv.innerHTML = parts.join('<br><br>');
+  legendDiv.style.display = parts.length ? '' : 'none';
+}
+
+legend.addTo(map);
+map.on('overlayadd overlayremove', updateLegend);
+
+// ---- Load the stations ----
+// MetroStops.geojson: wheelchair access. MetroNearestGroceryWalk.geojson: each station, its grocery
+// counts and its closest store by walking (also used by the station search and the dropdown).
+let stationResults = [];
+const stationLatLngs = {};   // station name -> position, for a store's straight line to its station
+
+const accessLoaded = fetch('../Data/MetroStops.geojson')
   .then(function (response) {
     if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading MetroStops.geojson'); }
     return response.json();
   })
   .then(function (data) {
-    const shown = { type: 'FeatureCollection', features: data.features.slice(0, LIMIT) };
-
-    const metro = L.geoJSON(shown, {
-      // PART 7: a small circle instead of the default pin.
-      pointToLayer: function (feature, latlng) {
-        return L.circleMarker(latlng, {
-          radius: 5,
-          weight: 0,
-          fillOpacity: 0.7,
-          fillColor: colours[feature.properties.line] || '#5639ce'
-        });
-      },
-      // PART 8: a popup built from the properties the notebook wrote.
-      onEachFeature: function (feature, layer) {
-        const p = feature.properties;
-        layer.bindPopup('<b>' + p.station + '</b><br>Line: ' + p.line + '<br>Wheelchair access: ' + p.wheelchair_access);
-      }
-    }).addTo(map);
-
-    layerControl.addOverlay(metro, 'Metro stations');
-
-    document.getElementById('status').textContent =
-      shown.features.length + ' of ' + data.features.length + ' metro stations shown';
-
-    // Metro line legend.
-    const lineLegend = L.control({ position: 'bottomright' });
-    lineLegend.onAdd = function () {
-      const div = L.DomUtil.create('div', 'legend');
-      div.innerHTML = '<strong>Metro line</strong><br>' + Object.keys(colours).map(function (k) {
-        return '<span style="background:' + colours[k] + '"></span>' + k;
-      }).join('<br>');
-      return div;
-    };
-    lineLegend.addTo(map);
+    data.features.forEach(function (f) { wheelchair[f.properties.station] = f.properties.wheelchair_access; });
   })
   .catch(function (err) {
     document.getElementById('status').textContent =
-      'Could not load MetroStops.geojson. Open the console (F12) for details.';
+      'Could not load the wheelchair access (MetroStops.geojson). Open the console (F12) for details.';
     console.error(err);
   });
 
-// ---- Grocery access: stations sized and coloured by groceries within 500 m ----
-fetch('../Data/MetroGrocery500m.geojson')
+const stationsLoaded = fetch('../Data/MetroNearestGroceryWalk.geojson')
   .then(function (response) {
-    if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading MetroGrocery500m.geojson'); }
+    if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading MetroNearestGroceryWalk.geojson'); }
     return response.json();
   })
   .then(function (data) {
-    const groceryLayer = L.geoJSON(data, {
-      pointToLayer: function (feature, latlng) {
-        const n = feature.properties.within_500m;
-        return L.circleMarker(latlng, {
-          //radius: 4 + n,              // bigger circle = more groceries
-          color: '#3d3333',
-          fillColor: colourFor(n),    // darker = more groceries
-          fillOpacity: 0.8,
-          weight: 2
-        });
-      },
-      onEachFeature: function (feature, layer) {
-        layer.bindPopup('Open grocery stores within 500 m: ' + feature.properties.within_500m);
-      }
-    }).addTo(map);
+    stationResults = data.features;
+    stationResults.forEach(function (f) {
+      stationLatLngs[f.properties.station] = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]);
+    });
+    filtered[0].features = stationResults;
 
-    layerControl.addOverlay(groceryLayer, 'Open groceries within 500 m');
+    // Fill the station box's suggestions, in alphabetical order.
+    const names = document.getElementById('stationNames');
+    stationResults.map(function (f) { return f.properties.station; }).sort().forEach(function (name) {
+      const option = document.createElement('option');
+      option.value = name;
+      names.appendChild(option);
+    });
   })
   .catch(function (err) {
+    document.getElementById('status').textContent = 'Could not load the metro stations. Open the console (F12) for details.';
+    document.getElementById('searchResults').innerHTML = '<li>Could not load the metro stations for search.</li>';
     console.error(err);
   });
 
+// Draw the stations once both files are in, so every symbol knows its wheelchair access.
+Promise.all([accessLoaded, stationsLoaded]).then(applyAccessFilter);
+
 // ---- Search: a grocery store's closest metro station, or a station's closest grocery store ----
-// GroceryNearestMetro.geojson and MetroNearestGrocery.geojson come from the
-// notebook (open stores only, straight-line distance).
+// Closest by walking; GroceryNearestMetroWalk.geojson holds each open store and its closest station.
 const MAX_RESULTS = 10;
-const searchLayer = L.layerGroup().addTo(map);   // the chosen result and its line
+const searchLayer = L.featureGroup().addTo(map);   // the chosen result and its route
 let stores = [];
-let stationResults = [];
 
 // Lower case, no accents or hyphens, so "cote des neiges" finds "Côte-Des-Neiges".
 function plain(text) {
@@ -123,16 +256,16 @@ function showStore(feature) {
   const station = stationLatLngs[p.station];
 
   searchLayer.clearLayers();
-  const marker = L.circleMarker(storeLatLng, { radius: 8, color: '#000', weight: 2, fillColor: '#fff', fillOpacity: 1 })
-    .bindPopup('<b>' + p.name + '</b><br>' + p.address + '<br>Closest metro: <b>' + p.station + '</b> (' + p.line + ' line)<br>' + p.dist_m + ' m in a straight line')
-    .addTo(searchLayer);
-
   if (station) {
-    L.polyline([storeLatLng, station], { color: colours[p.line] || '#000', weight: 3, dashArray: '6 6' }).addTo(searchLayer);
-    map.fitBounds(L.latLngBounds([storeLatLng, station]), { padding: [60, 60], maxZoom: 16 });
+    const line = drawRoute(searchLayer, p.route, p, station, storeLatLng, colours[p.line] || '#000');
+    map.fitBounds(line.getBounds(), { padding: [60, 60], maxZoom: 16 });
   } else {
     map.setView(storeLatLng, 16);
   }
+  const marker = L.circleMarker(storeLatLng, { radius: 8, color: '#000', weight: 2, fillColor: '#fff', fillOpacity: 1 })
+    .bindPopup('<b>' + p.name + '</b><br>' + p.address + '<br>Closest metro: <b>' + p.station + '</b> (' + p.line + ' line)<br>' + walkHtml(p))
+    .addTo(searchLayer);
+  restack();
   marker.openPopup();
 }
 
@@ -143,15 +276,16 @@ function showStation(feature) {
   const note = p.off_island ? '<br><em>The grocery data stops at the Island of Montréal, so a closer store may exist near this station.</em>' : '';
 
   searchLayer.clearLayers();
-  L.polyline([stationLatLng, storeLatLng], { color: colours[p.line] || '#000', weight: 3, dashArray: '6 6' }).addTo(searchLayer);
+  const line = drawRoute(searchLayer, p.route, p, stationLatLng, storeLatLng, colours[p.line] || '#000');
   L.circleMarker(storeLatLng, { radius: 8, color: '#000', weight: 2, fillColor: '#fff', fillOpacity: 1 })
     .bindPopup('<b>' + p.store + '</b><br>' + p.address)
     .addTo(searchLayer);
   const marker = L.circleMarker(stationLatLng, { radius: 8, color: '#000', weight: 2, fillColor: colours[p.line] || '#fff', fillOpacity: 1 })
-    .bindPopup('<b>' + p.station + '</b> (' + p.line + ' line)<br>Closest grocery store: <b>' + p.store + '</b><br>' + p.address + '<br>' + p.dist_m + ' m in a straight line' + note)
+    .bindPopup('<b>' + p.station + '</b> (' + p.line + ' line)<br>Closest grocery store: <b>' + p.store + '</b><br>' + p.address + '<br>' + walkHtml(p) + note)
     .addTo(searchLayer);
 
-  map.fitBounds(L.latLngBounds([stationLatLng, storeLatLng]), { padding: [60, 60], maxZoom: 16 });
+  restack();
+  map.fitBounds(line.getBounds(), { padding: [60, 60], maxZoom: 16 });
   marker.openPopup();
 }
 
@@ -191,25 +325,12 @@ function search(query, features, field, labelFor, show, noMatch) {
   show(matches[0]);
 }
 
-// Station name -> position, for drawing the line from the store to its station.
-const stationLatLngs = {};
-fetch('../Data/MetroStops.geojson')
-  .then(function (response) { return response.json(); })
-  .then(function (data) {
-    data.features.forEach(function (f) {
-      stationLatLngs[f.properties.station] = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]);
-    });
-  });
-
-const storesLoaded = fetch('../Data/GroceryNearestMetro.geojson')
+fetch('../Data/GroceryNearestMetroWalk.geojson')
   .then(function (response) {
-    if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading GroceryNearestMetro.geojson'); }
+    if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading GroceryNearestMetroWalk.geojson'); }
     return response.json();
   })
   .then(function (data) {
-    data.features.forEach(function (f) {
-      f.properties.address = f.properties.address.replace(/\s+/g, ' ');   // the source pads addresses with extra spaces
-    });
     stores = data.features;
   })
   .catch(function (err) {
@@ -217,86 +338,103 @@ const storesLoaded = fetch('../Data/GroceryNearestMetro.geojson')
     console.error(err);
   });
 
-const stationsLoaded = fetch('../Data/MetroNearestGrocery.geojson')
-  .then(function (response) {
-    if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading MetroNearestGrocery.geojson'); }
-    return response.json();
-  })
-  .then(function (data) {
-    stationResults = data.features;
-    // Fill the station box's suggestions, in alphabetical order.
-    const names = document.getElementById('stationNames');
-    stationResults.map(function (f) { return f.properties.station; }).sort().forEach(function (name) {
-      const option = document.createElement('option');
-      option.value = name;
-      names.appendChild(option);
-    });
-  })
-  .catch(function (err) {
-    document.getElementById('searchResults').innerHTML = '<li>Could not load the metro stations for search.</li>';
-    console.error(err);
-  });
-
 document.getElementById('storeSearch').addEventListener('submit', function (e) {
   e.preventDefault();
   search(document.getElementById('storeName').value, stores, 'name', function (p) {
-    return p.name + ', ' + p.address + ' → ' + p.station + ' (' + p.dist_m + ' m in a straight line)';
+    return p.name + ', ' + p.address + ' → ' + p.station + ': ' + walkText(p);
   }, showStore, 'No open grocery store matches');
 });
 
 document.getElementById('stationSearch').addEventListener('submit', function (e) {
   e.preventDefault();
   search(document.getElementById('stationName').value, stationResults, 'station', function (p) {
-    return p.station + ' → ' + p.store + ', ' + p.address + ' (' + p.dist_m + ' m in a straight line)';
+    return p.station + ' → ' + p.store + ', ' + p.address + ': ' + walkText(p);
   }, showStation, 'No metro station matches');
 });
 
-// ---- Station dropdown: every open grocery store within 500 m of the chosen station ----
-// Straight-line distance, worked out here from the same open stores the search uses.
-const RADIUS_M = 500;
-let picked = null;   // the chosen station's map layers and results
+// ---- Station dropdown: every open grocery store within a 500 m walk of the chosen station ----
+// MetroWalk500m.geojson holds each station's walk area, MetroWalkRoutes.geojson one route per station and store.
+let picked = null;           // the chosen station's map layers and results
+const walkAreas = {};        // station name -> walk area feature
+const walkRoutes = {};       // station name -> its routes, shortest first
+const pickedRenderer = L.svg({ pane: 'pickedArea' });
 
 function showPicked(feature) {
   const p = feature.properties;
+  const lineColour = colours[p.line] || '#000';
   const stationLatLng = L.latLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]);
-
-  const near = stores.map(function (f) {
-    const latLng = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]);
-    return { name: f.properties.name, address: f.properties.address, latLng: latLng, dist: map.distance(stationLatLng, latLng) };
-  }).filter(function (s) {
-    return s.dist <= RADIUS_M;
-  }).sort(function (a, b) {
-    return a.dist - b.dist;
-  });
+  const near = walkRoutes[p.station] || [];
 
   const layer = L.layerGroup().addTo(map);
-  const circle = L.circle(stationLatLng, { radius: RADIUS_M, color: colours[p.line] || '#000', weight: 2, fillOpacity: 0.1, interactive: false }).addTo(layer);
-  near.forEach(function (s) {
-    L.circleMarker(s.latLng, { radius: 6, color: '#000', weight: 2, fillColor: '#fff', fillOpacity: 1 })
-      .bindPopup('<b>' + s.name + '</b><br>' + s.address + '<br>' + Math.round(s.dist) + ' m from ' + p.station + ' in a straight line')
-      .addTo(layer);
+  // The chosen walk area, outlined in the line colour, above the faint walk-area layer.
+  const area = L.geoJSON(walkAreas[p.station], {
+    pane: 'pickedArea', renderer: pickedRenderer, interactive: false,
+    style: { color: lineColour, weight: 2, fillOpacity: 0.15 }
+  }).addTo(layer);
+  // The 500 m straight-line circle, faint and dashed, so the reader can compare it with the real walk.
+  L.circle(stationLatLng, {
+    pane: 'pickedArea', renderer: pickedRenderer, interactive: false,
+    radius: RADIUS_M, color: '#555', weight: 1, dashArray: '4 6', fill: false
+  }).addTo(layer);
+  const routeLayer = L.layerGroup().addTo(layer);    // the route to the store the reader picked
+  const markers = L.featureGroup().addTo(layer);     // the stores, kept above the stations
+
+  // Draw the walking route from the station to one store and open its popup.
+  function showRoute(r) {
+    routeLayer.clearLayers();
+    drawRoute(routeLayer, r.feature.geometry.coordinates, r.feature.properties, null, null, lineColour);
+    restack();
+    r.marker.openPopup();
+  }
+
+  near.forEach(function (r) {
+    const q = r.feature.properties;
+    const coords = r.feature.geometry.coordinates;
+    const end = coords[coords.length - 1];   // the route ends at the store
+    r.marker = L.circleMarker(L.latLng(end[1], end[0]), {
+      radius: 6, color: q.detour_flag ? DETOUR_COLOUR : '#000', weight: 2, fillColor: '#fff', fillOpacity: 1
+    })
+      .bindPopup('<b>' + q.store + '</b><br>' + q.address + '<br>From ' + p.station + ': ' + walkHtml(q))
+      .on('click', function () { showRoute(r); })
+      .addTo(markers);
   });
 
   const results = document.createElement('div');
   const heading = document.createElement('h3');
-  heading.textContent = p.station + ': ' + near.length + ' open grocery ' + (near.length === 1 ? 'store' : 'stores') + ' within ' + RADIUS_M + ' m';
+  heading.textContent = p.station + ': ' + near.length + ' open grocery ' + (near.length === 1 ? 'store' : 'stores') +
+    ' within a ' + RADIUS_M + ' m walk (' + p.straight_count + ' within ' + RADIUS_M + ' m in a straight line)';
   results.appendChild(heading);
   if (near.length === 0 && p.off_island) {
     const note = document.createElement('p');
     note.textContent = 'The grocery data stops at the Island of Montréal, so stores near this station may be missing.';
     results.appendChild(note);
+  } else if (near.length === 0) {
+    const note = document.createElement('p');
+    note.textContent = 'No open grocery store within a ' + RADIUS_M + ' m walk. The closest one: ' + p.store + ', ' + walkText(p) + '.';
+    results.appendChild(note);
+  } else {
+    const tip = document.createElement('p');
+    tip.textContent = 'Choose a store to see its walking route. Red routes are detours: the walk is more than 1.5 times the straight line.';
+    results.appendChild(tip);
   }
   const list = document.createElement('ul');
-  near.forEach(function (s) {
+  near.forEach(function (r) {
+    const q = r.feature.properties;
     const li = document.createElement('li');
-    li.textContent = s.name + ', ' + s.address + ' (' + Math.round(s.dist) + ' m in a straight line)';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = q.store + ', ' + q.address + ': ' + walkText(q);
+    button.addEventListener('click', function () { showRoute(r); });
+    li.appendChild(button);
     list.appendChild(li);
   });
   results.appendChild(list);
   document.getElementById('pickerResults').appendChild(results);
 
-  picked = { layer: layer, results: results };
-  map.fitBounds(circle.getBounds(), { padding: [30, 30] });
+  picked = { layer: layer, markers: markers, results: results };
+  restack();
+  // Fit both the walk area and the 500 m circle.
+  map.fitBounds(stationLatLng.toBounds(2 * RADIUS_M).extend(area.getBounds()), { padding: [30, 30] });
 }
 
 function clearPicked() {
@@ -306,11 +444,36 @@ function clearPicked() {
   picked = null;
 }
 
-// Runs once both files are in, so a choice always has the stores to work with.
+const walkLoaded = Promise.all([
+  fetch('../Data/MetroWalk500m.geojson').then(function (response) {
+    if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading MetroWalk500m.geojson'); }
+    return response.json();
+  }),
+  fetch('../Data/MetroWalkRoutes.geojson').then(function (response) {
+    if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading MetroWalkRoutes.geojson'); }
+    return response.json();
+  })
+]).then(function (files) {
+  files[0].features.forEach(function (f) { walkAreas[f.properties.station] = f; });
+  filtered[1].features = files[0].features;   // the walk-area layer
+  files[1].features.forEach(function (f) {
+    (walkRoutes[f.properties.station] = walkRoutes[f.properties.station] || []).push({ feature: f });
+  });
+  Object.values(walkRoutes).forEach(function (list) {
+    list.sort(function (a, b) { return a.feature.properties.walk_m - b.feature.properties.walk_m; });
+  });
+}).catch(function (err) {
+  console.error(err);
+});
+
+// The walk-area layer also needs the wheelchair access before it can be filtered.
+Promise.all([accessLoaded, walkLoaded]).then(applyAccessFilter);
+
+// Runs once every file is in, so a choice always has the walk areas and routes to work with.
 function buildStationSelect() {
   const select = document.getElementById('stationSelect');
-  if (stores.length === 0 || stationResults.length === 0) {
-    select.options[0].textContent = 'Could not load the stations or grocery stores.';
+  if (stationResults.length === 0 || Object.keys(walkAreas).length === 0) {
+    select.options[0].textContent = 'Could not load the stations or walking areas.';
     return;
   }
   const sorted = stationResults.slice().sort(function (a, b) {
@@ -330,18 +493,4 @@ function buildStationSelect() {
   select.disabled = false;
 }
 
-Promise.all([storesLoaded, stationsLoaded]).then(buildStationSelect);
-
-// Grocery count legend (declared once, added once).
-const groceryLegend = L.control({ position: 'bottomright' });
-groceryLegend.onAdd = function () {
-  const div = L.DomUtil.create('div', 'legend');
-  const rows = [[20, '20 or more'], [10, '10 to 19'], [5, '5 to 9'], [1, '1 to 4'], [0, 'none']];
-  div.innerHTML = '<strong>Open grocery stores within 500 m (count)</strong><br>' +
-    rows.map(function (r) {
-      return '<span style="background:' + colourFor(r[0]) + '"></span>' + r[1];
-    }).join('<br>');
-  return div;
-};
-groceryLegend.addTo(map);
-  
+Promise.all([stationsLoaded, walkLoaded]).then(buildStationSelect);

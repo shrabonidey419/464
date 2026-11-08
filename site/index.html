@@ -18,7 +18,12 @@
     <p>Students and residents in Montreal who want to check how easy it is to walk to the metro.</p>
 
     <h2>What you can do here</h2>
-    <p>Click the box to see only the metro stations you can use with a wheelchair, and click any station to see its line and access. Use the search boxes to find the closest metro station to a grocery store, or the closest open grocery store to a metro station. Choose a station from the dropdown to see every open grocery store within 500 m of it.</p>
+    <ul>
+      <li><strong>Read a station:</strong> the fill is the number of open grocery stores within a 500 m walk, the ring is the metro line, and a white dot means wheelchair access. Click it for details.</li>
+      <li><strong>See who is left out:</strong> tick <strong>5-minute walk areas</strong> on the map. Blank space is more than a 500 m walk from any station.</li>
+      <li><strong>Wheelchair users:</strong> tick the box below to keep only the stations you can use.</li>
+      <li><strong>Search or choose a station</strong> to see real walking routes to grocery stores. Red routes are detours, more than 1.5 times the straight line, often because of a highway or rail line.</li>
+    </ul>
 
     <label class="control">
       <input type="checkbox" id="accessibleOnly" />
@@ -40,7 +45,7 @@
     <ul id="searchResults"></ul>
 
     <div id="stationPicker" class="control">
-      <label for="stationSelect">Choose a metro station to see the open grocery stores within 500 m:</label>
+      <label for="stationSelect">Choose a metro station to see the open grocery stores within a 500 m walk:</label>
       <select id="stationSelect" disabled>
         <option value="">Loading stations...</option>
       </select>
@@ -49,8 +54,9 @@
 
     <h2>Not in this iteration</h2>
     <ul>
-      <li><strong>Real walk times on the street network:</strong> still working on walking routes from the Google API.</li>
-      <li><strong>Walking barriers:</strong> highways and other barriers are not measured yet. Search distances and the 500 m circles are straight lines, not walks.</li>
+      <li><strong>Long walks:</strong> walks are worked out up to 1,600 m (about 20 minutes). A store further than that from every station, such as in the West Island, shows its straight-line distance instead, and says so. Walk times assume 80 m a minute and ignore hills, stairs and waiting at lights.</li>
+      <li><strong>Wheelchair routes:</strong> the walk areas and routes use the walking network, which includes stairs, curbs and steep streets. With the wheelchair box ticked they show the area near an accessible station, not a route checked for a wheelchair.</li>
+      <li><strong>Paths OpenStreetMap does not have:</strong> walks through malls, parking lots and the underground city are missing, so a store inside a mall (for example at Angrignon) can look out of reach.</li>
       <li><strong>A stricter grocery list:</strong> the city's grocery category also includes kiosks and pharmacies, and the data stops at the Island of Montréal, so stations in Laval and Longueuil may have a closer store than the one shown.</li>
       <li><strong>One borough focus:</strong> I kept the whole metro network to keep the pipeline simple; next I will focus on Côte-des-Neiges–NDG, where many students live and the Décarie expressway creates walking barriers.</li>
       <li><strong>Transfer stations:</strong> stations like Berri-UQAM and Lionel-Groulx appear under one line only, because that is how the STM file stores them.</li>
@@ -60,6 +66,7 @@
     <ul>
       <li><a href="https://www.donneesquebec.ca/recherche/fr/dataset/a0073997-3a02-4c34-8acf-758a2ee950f4">STM bus and metro lines and stops</a>, Société de transport de Montréal. Licence: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Accessed 3 October 2026.</li>
       <li><a href="https://donnees.montreal.ca/en/dataset/etablissements-alimentaires">Établissements alimentaires (food establishments)</a>, Ville de Montréal. Licence: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Accessed 23 October 2026. Filtered to the grocery type (Épicerie) and to open stores.</li>
+      <li>Walking network © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (<a href="https://opendatacommons.org/licenses/odbl/">ODbL</a>), downloaded with OSMnx on 8 November 2026.</li>
       <li>Basemap © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.</li>
     </ul>
   </header>

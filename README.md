@@ -111,9 +111,8 @@ Test 3. I click xxx, which has no grocery store within 500 m.
   Expected: No grocery points appear. The popup says "No grocery store
   within 500 m." The browser console shows no errors.
 
-## Pre-flight report (Lab 7)
-## Pre-flight report (Lab 7)
 
+## Pre-flight report (Lab 7)
 | Check | Result | What I did |
 | --- | --- | --- |
 | 1. Cold start | Pass. The page loaded with no console errors. | Opened the page in a fresh private window with the console open. No fix needed. |
@@ -124,3 +123,16 @@ Test 3. I click xxx, which has no grocery store within 500 m.
 | 6. On a phone | Pass. What checked search box and popups fit the screen and work by touch. | Tested in the browser's phone-size view and on my own phone.  "No fix needed." |
 | 7. Mouse in my pocket | [Pass]. [What happened : it change the differnt position] | 
  | 8. Accessibility audit | Fault. Lighthouse score 97. Two issues: headings skipped a level (an h3 with no h2 before it), and the page had no main landmark. | Ran Lighthouse (Accessibility only) in DevTools. Fixed: changed the h3 to an h2 and wrapped the search panel and map in a <main> element. Re-ran in an incognito window: 100 . |[there had an issue in  css because there had not main  and h2 .I  fixed it by using claude ] |
+
+## AI disclosure
+
+I used Claude (Claude Code, an AI assistant) for these parts of the project:
+
+- **Walking distance instead of straight lines.** In Lab 7 every distance was a straight line, which I felt was not useful for my users (residents and students), because nobody walks in a straight line. I asked Claude how to measure real walks. It wrote the notebook `notebooks/walkNetwork.ipynb`, which downloads Montréal's walking network from OpenStreetMap with OSMnx and uses networkx to find the streets within a 500 m walk of each station. That gives each station a 500 m walking area (not a circle), the open grocery stores inside it, and the walking route to each one.
+- **Walking routes on the page.** When I choose a metro station in the dropdown, the map shows its 500 m walking area and the grocery stores inside it, and when I choose a store it shows the walking route. The two search boxes also find the closest station or store by walking and draw the route. Routes more than 1.5 times the straight line are shown in red as detours (this was my A3 plan). Walks longer than 1,600 m were not worked out, so those keep the straight-line distance and say so.
+- **Wheelchair checkbox.** My checkbox was on the page but did nothing, because no code was connected to it. Claude connected it, so it now shows only the wheelchair-accessible stations.
+- **One station layer.** My metro station circles and my grocery-count circles sat on top of each other. Claude merged them into one symbol: the fill is the number of grocery stores within a 500 m walk, the ring is the metro line, and a white dot means wheelchair access. The popup shows all three, which I really like. It also added a layer for the 5-minute walk areas, so the layer switcher now has two layers, and one legend that follows them.
+- **Accessibility audit fix.** Claude helped me fix the heading levels and add a `<main>` element (check 8 above).
+
+I chose what to build and which options to use. Claude wrote most of the code and ran checks on the results; for example, the notebook checks that no walk is shorter than its straight line.
+
