@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- Leaflet: the map library. Loaded from the internet, nothing to install. -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css" />
+  <!-- The ?v= number forces phones to load the new file. Raise it each time you change style.css or app.js. -->
+  <link rel="stylesheet" href="style.css?v=2" />
 </head>
 <body>
   <main>
@@ -75,6 +76,6 @@
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

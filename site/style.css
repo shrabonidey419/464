@@ -32,8 +32,8 @@ header a { color: #DCBD23; }
 .legend span.area { border: none; border-radius: 0; opacity: 0.4; }                              /* the walk areas, as see-through as on the map */
 .legend summary { cursor: pointer; font-weight: bold; }
 .legend details[open] summary { margin-bottom: 4px; }
-/* On a phone: smaller text, and if the open legend is taller than the map, it scrolls inside itself. */
+/* On a phone: smaller text, and the open legend stops below the layer switcher; anything taller scrolls inside it. */
 @media (max-width: 800px) {
   .legend { font-size: 12px; padding: 4px 8px; }
-  .legend-body { max-height: calc(50vh - 90px); overflow-y: auto; }
+  .legend-body { max-height: calc(50vh - 150px); overflow-y: auto; }
 }
