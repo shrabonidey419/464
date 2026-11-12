@@ -9,11 +9,33 @@ header p { margin: 4px 0 0; font-size: 14px; color: #DCBD23; }
 header ul { margin: 4px 0 0; padding-left: 18px; font-size: 14px; }
 header a { color: #DCBD23; }
 #map { flex: 1; height: 100vh; }
-/* On a phone the map stays at the top while the text scrolls under it. */
+/* The "i" button and the close button are only used on a phone. */
+#infoToggle, #infoClose { display: none; }
+/* On a phone the map fills the screen and the text panel folds into a round "i" button.
+   Tapping it slides the panel up from the bottom, over the map. */
 @media (max-width: 800px) {
-  main { flex-direction: column; height: auto; }
-  header { flex: none; overflow-y: visible; }
-  #map { flex: none; order: -1; position: sticky; top: 0; height: 50vh; z-index: 1; }
+  main { display: block; height: 100vh; height: 100dvh; }
+  #map { height: 100%; }
+  header {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
+    max-height: 75vh; overflow-y: auto; border-radius: 12px 12px 0 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.4);
+    transform: translateY(100%); visibility: hidden;
+    transition: transform 0.25s, visibility 0.25s;
+  }
+  body.panel-open header { transform: none; visibility: visible; }
+  #infoToggle {
+    display: block; position: fixed; left: 10px; bottom: 24px; z-index: 1000;
+    width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff;
+    background: #1F2D5A; color: #DCBD23; font: bold italic 22px Georgia, serif;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4); cursor: pointer;
+  }
+  body.panel-open #infoToggle { display: none; }
+  #infoClose {
+    display: block; position: sticky; top: 0; float: right; margin: 0 -6px 0 8px;
+    width: 32px; height: 32px; border: none; border-radius: 50%;
+    background: #DCBD23; color: #1F2D5A; font: bold 22px/1 Arial, sans-serif; cursor: pointer;
+  }
 }
 .legend { background: #fff; padding: 6px 10px; border-radius: 6px; line-height: 1.6; font-size: 13px; }
 #storeSearch, #stationSearch { margin-top: 8px; font-size: 14px; }
@@ -21,9 +43,7 @@ header a { color: #DCBD23; }
 #storeSearch input, #stationSearch input { margin: 4px 4px 0 0; padding: 4px 6px; width: 240px; max-width: 70%; }
 #searchResults { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
 #searchResults button, #pickerResults button { background: none; border: none; padding: 0; color: #fff; text-decoration: underline; cursor: pointer; font: inherit; text-align: left; }
-#stationPicker { margin: 10px 0 0; padding: 6px 10px; border: 1px solid #DCBD23; font-size: 14px; }
-#stationPicker label { display: block; }
-#stationSelect { margin-top: 4px; padding: 4px 6px; width: 100%; }
+#stationSearch { margin-top: 10px; padding: 6px 10px; border: 1px solid #DCBD23; }
 #pickerResults h3 { margin: 10px 0 2px; font-size: 14px; color: #DCBD23; }
 #pickerResults ul { margin: 4px 0 0; padding-left: 18px; font-size: 14px; }
 .legend span { display: inline-block; box-sizing: border-box; width: 12px; height: 12px; border: 1px solid #3d3333; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
@@ -35,5 +55,5 @@ header a { color: #DCBD23; }
 /* On a phone: smaller text, and the open legend stops below the layer switcher; anything taller scrolls inside it. */
 @media (max-width: 800px) {
   .legend { font-size: 12px; padding: 4px 8px; }
-  .legend-body { max-height: calc(50vh - 150px); overflow-y: auto; }
+  .legend-body { max-height: calc(100vh - 150px); max-height: calc(100dvh - 150px); overflow-y: auto; }
 }

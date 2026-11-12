@@ -1,5 +1,7 @@
 # How far is the metro? STM walking access in Montréal
-https://shrabonidey419.github.io/464/site/
+Repository link: https://github.com/shrabonidey419/464
+GitHub Pages link: https://shrabonidey419.github.io/464/site/
+
  500m-walking-accessibility-near-STM-metro-station-Montreal/site/
 
 An interactive web map of the 68 STM metro stations in Montréal. It is the first step toward showing which areas of the city are within a 5-minute walk of a metro station.
@@ -25,7 +27,7 @@ _Which parts of Montréal are within a 5-minute walk (about 500 m) of a metro st
 ## How to run
 
 1. Open the project folder in VS Code.
-2. Run `notebooks/[your notebook name].ipynb` from top to bottom (Restart → Run All). It writes `data/metro_stations.geojson`.
+2. Run `notebooks/MetroStops.ipynb` from top to bottom (Restart → Run All). It writes `data/metro_stations.geojson`.
 3. Right-click `site/index.html` → **Open with Live Server**.
 
 ## Data
@@ -129,9 +131,9 @@ Test 3. I click xxx, which has no grocery store within 500 m.
 I used Claude (Claude Code, an AI assistant) for these parts of the project:
 
 - **Walking distance instead of straight lines.** In Lab 7 every distance was a straight line, which I felt was not useful for my users (residents and students), because nobody walks in a straight line. I asked Claude how to measure real walks. It wrote the notebook `notebooks/walkNetwork.ipynb`, which downloads Montréal's walking network from OpenStreetMap with OSMnx and uses networkx to find the streets within a 500 m walk of each station. That gives each station a 500 m walking area (not a circle), the open grocery stores inside it, and the walking route to each one.
-- **Walking routes on the page.** When I choose a metro station in the dropdown, the map shows its 500 m walking area and the grocery stores inside it, and when I choose a store it shows the walking route. The two search boxes also find the closest station or store by walking and draw the route. Routes more than 1.5 times the straight line are shown in red as detours (this was my A3 plan). Walks longer than 1,600 m were not worked out, so those keep the straight-line distance and say so.
+- **Walking routes on the page.** When I type a metro station's name, the map shows its 500 m walking area and every grocery store inside it, and when I click a store (in the list or on the map) it shows the walking route. A station with no store that close shows the walk to its closest store instead. The grocery store search box finds a store's closest station by walking and draws the route. Routes more than 1.5 times the straight line are shown in red as detours (this was my A3 plan). Walks longer than 1,600 m were not worked out, so those keep the straight-line distance and say so.
 - **Wheelchair checkbox.** My checkbox was on the page but did nothing, because no code was connected to it. Claude connected it, so it now shows only the wheelchair-accessible stations.
-- **One station layer.** My metro station circles and my grocery-count circles sat on top of each other. Claude merged them into one symbol: the fill is the number of grocery stores within a 500 m walk, the ring is the metro line, and a white dot means wheelchair access. The popup shows all three, which I really like. It also added a layer for the 5-minute walk areas, so the layer switcher now has two layers, and one legend that follows them.
+- **One station layer.** My metro station circles and my grocery-count circles sat on top of each other. Claude merged them into one symbol: the fill is the number of grocery stores within a 500 m walk, the ring is the metro line, and a white dot means wheelchair access. The popup shows all three, which I really like. It also added a layer for the 5-minute walk areas, so the layer switcher now has two layers, and one legend that follows them. By using claude , I make it chickable my legend because it not fit on my phone screen.
 - **Accessibility audit fix.** Claude helped me fix the heading levels and add a `<main>` element (check 8 above).
 
 I chose what to build and which options to use. Claude wrote most of the code and ran checks on the results; for example, the notebook checks that no walk is shorter than its straight line.

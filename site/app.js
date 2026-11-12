@@ -9,8 +9,8 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 
-// Drawing order, bottom to top: basemap, walk areas, the dropdown's chosen walk area,
-// then (on the default canvas) routes, stations, the dropdown's stores and the search result.
+// Drawing order, bottom to top: basemap, walk areas, the station box's chosen walk area,
+// then (on the default canvas) routes, stations, the station box's stores and the search result.
 // The two area panes ignore the mouse, so clicks reach the stations above them.
 map.createPane('walkAreas');
 map.getPane('walkAreas').style.zIndex = 350;
@@ -85,7 +85,7 @@ function drawRoute(layer, lonLats, p, from, to, colour) {
 
 // ---- The two map layers: metro stations and 5-minute walk areas ----
 const layerControl = L.control.layers(null, {}, { collapsed: false }).addTo(map);
-const wheelchair = {};   // station name -> 'Yes' or 'No', from MetroStops.geojson
+const wheelchair = {};   // station name -> 'Yes' or 'No', from metro_stations.geojson
 
 // PART 7: one symbol per station. Fill = open grocery stores within a 500 m walk,
 // ring = metro line, white centre dot = wheelchair accessible.
@@ -151,7 +151,7 @@ function applyAccessFilter() {
 accessibleBox.addEventListener('change', applyAccessFilter);
 
 // Keep the canvas in order after anything is drawn: stations above routes,
-// the dropdown's stores above the stations, the search result above everything.
+// the station box's stores above the stations, the search result above everything.
 function restack() {
   stationLayer.bringToFront();
   if (picked) { picked.markers.bringToFront(); }
@@ -202,14 +202,14 @@ legend.addTo(map);
 map.on('overlayadd overlayremove', updateLegend);
 
 // ---- Load the stations ----
-// MetroStops.geojson: wheelchair access. MetroNearestGroceryWalk.geojson: each station, its grocery
-// counts and its closest store by walking (also used by the station search and the dropdown).
+// metro_stations.geojson (written by notebooks/MetroStops.ipynb): wheelchair access. MetroNearestGroceryWalk.geojson: each station, its grocery
+// counts and its closest store by walking (also used by the station box).
 let stationResults = [];
 const stationLatLngs = {};   // station name -> position, for a store's straight line to its station
 
-const accessLoaded = fetch('../Data/MetroStops.geojson')
+const accessLoaded = fetch('../Data/metro_stations.geojson')
   .then(function (response) {
-    if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading MetroStops.geojson'); }
+    if (!response.ok) { throw new Error('HTTP ' + response.status + ' loading metro_stations.geojson'); }
     return response.json();
   })
   .then(function (data) {
@@ -217,7 +217,7 @@ const accessLoaded = fetch('../Data/MetroStops.geojson')
   })
   .catch(function (err) {
     document.getElementById('status').textContent =
-      'Could not load the wheelchair access (MetroStops.geojson). Open the console (F12) for details.';
+      'Could not load the wheelchair access (metro_stations.geojson). Open the console (F12) for details.';
     console.error(err);
   });
 
@@ -232,14 +232,6 @@ const stationsLoaded = fetch('../Data/MetroNearestGroceryWalk.geojson')
       stationLatLngs[f.properties.station] = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]);
     });
     filtered[0].features = stationResults;
-
-    // Fill the station box's suggestions, in alphabetical order.
-    const names = document.getElementById('stationNames');
-    stationResults.map(function (f) { return f.properties.station; }).sort().forEach(function (name) {
-      const option = document.createElement('option');
-      option.value = name;
-      names.appendChild(option);
-    });
   })
   .catch(function (err) {
     document.getElementById('status').textContent = 'Could not load the metro stations. Open the console (F12) for details.';
@@ -280,27 +272,7 @@ function showStore(feature) {
   marker.openPopup();
 }
 
-function showStation(feature) {
-  const p = feature.properties;
-  const stationLatLng = L.latLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]);
-  const storeLatLng = L.latLng(p.store_lat, p.store_lon);
-  const note = p.off_island ? '<br><em>The grocery data stops at the Island of Montréal, so a closer store may exist near this station.</em>' : '';
-
-  searchLayer.clearLayers();
-  const line = drawRoute(searchLayer, p.route, p, stationLatLng, storeLatLng, colours[p.line] || '#000');
-  L.circleMarker(storeLatLng, { radius: 8, color: '#000', weight: 2, fillColor: '#fff', fillOpacity: 1 })
-    .bindPopup('<b>' + p.store + '</b><br>' + p.address)
-    .addTo(searchLayer);
-  const marker = L.circleMarker(stationLatLng, { radius: 8, color: '#000', weight: 2, fillColor: colours[p.line] || '#fff', fillOpacity: 1 })
-    .bindPopup('<b>' + p.station + '</b> (' + p.line + ' line)<br>Closest grocery store: <b>' + p.store + '</b><br>' + p.address + '<br>' + walkHtml(p) + note)
-    .addTo(searchLayer);
-
-  restack();
-  map.fitBounds(line.getBounds(), { padding: [60, 60], maxZoom: 16 });
-  marker.openPopup();
-}
-
-// Shared by both search boxes: list the matches and show the first on the map.
+// The grocery store search: list the matches and show the first on the map.
 function search(query, features, field, labelFor, show, noMatch) {
   const list = document.getElementById('searchResults');
   list.innerHTML = '';
@@ -351,19 +323,13 @@ fetch('../Data/GroceryNearestMetroWalk.geojson')
 
 document.getElementById('storeSearch').addEventListener('submit', function (e) {
   e.preventDefault();
+  clearPicked();   // one result on the map at a time
   search(document.getElementById('storeName').value, stores, 'name', function (p) {
     return p.name + ', ' + p.address + ' → ' + p.station + ': ' + walkText(p);
   }, showStore, 'No open grocery store matches');
 });
 
-document.getElementById('stationSearch').addEventListener('submit', function (e) {
-  e.preventDefault();
-  search(document.getElementById('stationName').value, stationResults, 'station', function (p) {
-    return p.station + ' → ' + p.store + ', ' + p.address + ': ' + walkText(p);
-  }, showStation, 'No metro station matches');
-});
-
-// ---- Station dropdown: every open grocery store within a 500 m walk of the chosen station ----
+// ---- Station box: every open grocery store within a 500 m walk of the station you type ----
 // MetroWalk500m.geojson holds each station's walk area, MetroWalkRoutes.geojson one route per station and store.
 let picked = null;           // the chosen station's map layers and results
 const walkAreas = {};        // station name -> walk area feature
@@ -375,6 +341,10 @@ function showPicked(feature) {
   const lineColour = colours[p.line] || '#000';
   const stationLatLng = L.latLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]);
   const near = walkRoutes[p.station] || [];
+
+  // Clear the grocery store search, so only this station's stores are on the map.
+  searchLayer.clearLayers();
+  document.getElementById('searchResults').innerHTML = '';
 
   const layer = L.layerGroup().addTo(map);
   // The chosen walk area, outlined in the line colour, above the faint walk-area layer.
@@ -389,6 +359,8 @@ function showPicked(feature) {
   }).addTo(layer);
   const routeLayer = L.layerGroup().addTo(layer);    // the route to the store the reader picked
   const markers = L.featureGroup().addTo(layer);     // the stores, kept above the stations
+  // The map view: both the walk area and the 500 m circle.
+  const view = stationLatLng.toBounds(2 * RADIUS_M).extend(area.getBounds());
 
   // Draw the walking route from the station to one store and open its popup.
   function showRoute(r) {
@@ -421,8 +393,15 @@ function showPicked(feature) {
     results.appendChild(note);
   } else if (near.length === 0) {
     const note = document.createElement('p');
-    note.textContent = 'No open grocery store within a ' + RADIUS_M + ' m walk. The closest one: ' + p.store + ', ' + walkText(p) + '.';
+    note.textContent = 'No open grocery store within a ' + RADIUS_M + ' m walk. The closest one, shown on the map: ' + p.store + ', ' + walkText(p) + '.';
     results.appendChild(note);
+    // Draw the walk to the closest store instead, so the reader still sees how far it is.
+    const storeLatLng = L.latLng(p.store_lat, p.store_lon);
+    const line = drawRoute(routeLayer, p.route, p, stationLatLng, storeLatLng, lineColour);
+    L.circleMarker(storeLatLng, { radius: 6, color: p.detour_flag ? DETOUR_COLOUR : '#000', weight: 2, fillColor: '#fff', fillOpacity: 1 })
+      .bindPopup('<b>' + p.store + '</b><br>' + p.address + '<br>Closest store to ' + p.station + ': ' + walkHtml(p))
+      .addTo(markers);
+    view.extend(line.getBounds());   // zoom out far enough to show the store
   } else {
     const tip = document.createElement('p');
     tip.textContent = 'Choose a store to see its walking route. Red routes are detours: the walk is more than 1.5 times the straight line.';
@@ -442,16 +421,15 @@ function showPicked(feature) {
   results.appendChild(list);
   document.getElementById('pickerResults').appendChild(results);
 
-  picked = { layer: layer, markers: markers, results: results };
+  picked = { station: p.station, layer: layer, markers: markers };
   restack();
-  // Fit both the walk area and the 500 m circle.
-  map.fitBounds(stationLatLng.toBounds(2 * RADIUS_M).extend(area.getBounds()), { padding: [30, 30] });
+  map.fitBounds(view, { padding: [30, 30] });
 }
 
 function clearPicked() {
+  document.getElementById('pickerResults').innerHTML = '';
   if (!picked) { return; }
   map.removeLayer(picked.layer);
-  picked.results.remove();
   picked = null;
 }
 
@@ -480,28 +458,98 @@ const walkLoaded = Promise.all([
 // The walk-area layer also needs the wheelchair access before it can be filtered.
 Promise.all([accessLoaded, walkLoaded]).then(applyAccessFilter);
 
-// Runs once every file is in, so a choice always has the walk areas and routes to work with.
-function buildStationSelect() {
-  const select = document.getElementById('stationSelect');
+// Runs once every file is in, so a station always has its walk area and routes to work with.
+function buildStationSearch() {
+  const input = document.getElementById('stationName');
+  const button = document.querySelector('#stationSearch button');
   if (stationResults.length === 0 || Object.keys(walkAreas).length === 0) {
-    select.options[0].textContent = 'Could not load the stations or walking areas.';
+    input.placeholder = 'Could not load the stations or walking areas.';
     return;
   }
   const sorted = stationResults.slice().sort(function (a, b) {
     return a.properties.station.localeCompare(b.properties.station, 'fr');
   });
-  select.options[0].textContent = 'Choose a station...';
-  sorted.forEach(function (f, i) {
+
+  // The box suggests station names as you type.
+  const names = document.getElementById('stationNames');
+  sorted.forEach(function (f) {
     const option = document.createElement('option');
-    option.value = i;
-    option.textContent = f.properties.station + ' (' + f.properties.line + ')';
-    select.appendChild(option);
+    option.value = f.properties.station;
+    option.label = f.properties.line + ' line';
+    names.appendChild(option);
   });
-  select.addEventListener('change', function () {
+
+  function exactStation(q) {
+    return sorted.find(function (f) { return plain(f.properties.station) === q; });
+  }
+
+  // Show one station's stores. With a part of a name, show it if only one station matches,
+  // otherwise list the matching stations to choose from.
+  function pick(query) {
+    const q = plain(query);
     clearPicked();
-    if (select.value !== '') { showPicked(sorted[select.value]); }
+    if (!q) { return; }
+    const matches = sorted.filter(function (f) { return plain(f.properties.station).includes(q); });
+    const exact = exactStation(q);
+    if (exact || matches.length === 1) {
+      showPicked(exact || matches[0]);
+      return;
+    }
+    const box = document.getElementById('pickerResults');
+    const note = document.createElement('p');
+    note.textContent = matches.length === 0
+      ? 'No metro station matches "' + query + '".'
+      : matches.length + ' stations match "' + query + '". Choose one:';
+    box.appendChild(note);
+    const list = document.createElement('ul');
+    matches.forEach(function (f) {
+      const li = document.createElement('li');
+      const choice = document.createElement('button');
+      choice.type = 'button';
+      choice.dataset.keepOpen = 'yes';   // choosing a station shows its store list, so the phone panel stays open
+      choice.textContent = f.properties.station + ' (' + f.properties.line + ' line)';
+      choice.addEventListener('click', function () {
+        input.value = f.properties.station;
+        pick(f.properties.station);
+      });
+      li.appendChild(choice);
+      list.appendChild(li);
+    });
+    box.appendChild(list);
+  }
+
+  // Picking a suggestion, or typing a full name, shows the stores right away.
+  input.addEventListener('input', function () {
+    const q = plain(input.value);
+    if (!q) { clearPicked(); return; }
+    const exact = exactStation(q);
+    if (exact && !(picked && picked.station === exact.properties.station)) { pick(input.value); }
   });
-  select.disabled = false;
+  document.getElementById('stationSearch').addEventListener('submit', function (e) {
+    e.preventDefault();
+    pick(input.value);
+  });
+
+  input.placeholder = 'e.g. Namur, Berri-UQAM';
+  input.disabled = false;
+  button.disabled = false;
 }
 
-Promise.all([stationsLoaded, walkLoaded]).then(buildStationSelect);
+Promise.all([stationsLoaded, walkLoaded]).then(buildStationSearch);
+
+// ---- On a phone the text panel folds into an "i" button, so the map can fill the screen ----
+const panelToggle = document.getElementById('infoToggle');
+function setPanel(open) {
+  document.body.classList.toggle('panel-open', open);
+  panelToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+panelToggle.addEventListener('click', function () { setPanel(true); });
+document.getElementById('infoClose').addEventListener('click', function () { setPanel(false); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setPanel(false); } });
+// Choosing a store in a result list closes the panel, so the reader sees it on the map.
+['searchResults', 'pickerResults'].forEach(function (id) {
+  document.getElementById(id).addEventListener('click', function (e) {
+    const button = e.target.closest('button');
+    if (button && !button.dataset.keepOpen && window.matchMedia('(max-width: 800px)').matches) { setPanel(false); }
+  });
+});
