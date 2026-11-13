@@ -151,4 +151,25 @@ Recheck: I’ll give the same task to someone new on a phone, with no help. Fixe
 
 After the recheck: I added a "Show grocery stores within 500 m" button to each metro station's popup. Clicking it opens the search panel and shows the open grocery stores within a 500 m walk of that station. When I select one of those stores, the map draws the walking route to it.
 
+before fix: 
+![alt text](<Screenshot 2026-11-08 190039-1.png>)
+
+![alt text](<Screenshot 2026-11-13 162023-2.png>)
+
+
+My feature explained
+
+What it does: My map shows the real walking route to grocery stores, not a straight line. Users can search for a store, and clicking a store opens a pop-up with its details.
+
+Which lines do the work:
+
+Walking route (Python): In 'notebooks/walkNetwork.ipynb', cell 6 downloads the street and path network, cell 8 joins each station and store to its closest street corner, cell 12 finds the shortest walking path from each station to each store and works out the real walking distance, and cell 14 saves the routes as a GeoJSON file ('MetroWalkRoutes.geojson').
+Walking route (JS): In 'site/app.js', lines 448–468 load the route file from the notebook, and lines 83–90 ('drawRoute') draw it on the map as a line (red when it is a detour).
+Search box: In 'site/app.js', lines 336–342 take what the user types, lines 288–321 find the matching stores, and lines 268–285 ('showStore') draw the route and move the map to it.
+Pop-up: In 'site/app.js', lines 280–281 and 392 show the store’s name, address and walking distance, and line 393 draws the walking route when a user clicks a store. Lines 109–125 show the metro station’s pop-up: its name, line, wheelchair access, the number of grocery stores nearby, and a button that lists them.
+
+One thing I do not yet fully understand: I don’t fully understand how the map decides how far to zoom when it finds a store. 
+
+
+
 AI disclosure: I used Claude to help build the two search boxes, turn the description and the search boxes into two separate icons, and add the button to the metro station popup.
