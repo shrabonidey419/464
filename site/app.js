@@ -7,7 +7,8 @@ if (!PHONE.matches) { document.body.dataset.panel = 'search'; }
 
 // preferCanvas draws every circle on one canvas instead of one page element
 // per marker, which keeps the map fast with many points.
-const map = L.map('map', { preferCanvas: true }).setView([45.50067037889345, -73.57793888179032], 12);
+// zoomControl: false removes the default zoom buttons from the top, so they can go at the bottom (below).
+const map = L.map('map', { preferCanvas: true, zoomControl: false }).setView([45.50067037889345, -73.57793888179032], 12);
 
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
@@ -560,14 +561,16 @@ function buildStationSearch() {
 Promise.all([stationsLoaded, walkLoaded]).then(buildStationSearch);
 
 // ---- Two panels: the search (🔍) and the description (i) ----
-// One open at a time, or none. Their buttons sit in the map's bottom-left corner.
-const panelButtons = L.control({ position: 'bottomleft' });
+// One open at a time, or none. Their buttons sit in the map's top-left corner,
+// and the zoom in / zoom out buttons in the bottom-left corner.
+const panelButtons = L.control({ position: 'topleft' });
 panelButtons.onAdd = function () {
   const div = document.getElementById('panelButtons');
   L.DomEvent.disableClickPropagation(div);   // a click on a button should not also click the map
   return div;
 };
 panelButtons.addTo(map);
+L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
 const toggles = document.querySelectorAll('.panel-toggle');
 function setPanel(name) {   // 'search', 'info' or '' for none

@@ -151,3 +151,4 @@ Recheck: I’ll give the same task to someone new on a phone, with no help. Fixe
 
 After the recheck: I added a "Show grocery stores within 500 m" button to each metro station's popup. Clicking it opens the search panel and shows the open grocery stores within a 500 m walk of that station. When I select one of those stores, the map draws the walking route to it.
 
+AI disclosure: I used Claude to help build the two search boxes, turn the description and the search boxes into two separate icons, and add the button to the metro station popup.

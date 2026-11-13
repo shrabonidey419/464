@@ -1,6 +1,6 @@
 /* PRESENTATION: how the page looks. */
 /* Two panels, the search (🔍) and the description (i). One is open at a time, or none,
-   chosen by body[data-panel]. The buttons that open them sit in the map's bottom-left corner. */
+   chosen by body[data-panel]. The buttons that open them sit in the map's top-left corner. */
 body { margin: 0; font-family: Arial, Helvetica, sans-serif; }
 main { display: flex; height: 100vh; }
 .panel { flex: 0 0 380px; box-sizing: border-box; overflow-y: auto; padding: 10px 16px; background: #1F2D5A; color: #fff; }
@@ -16,7 +16,7 @@ main { display: flex; height: 100vh; }
   width: 32px; height: 32px; border: none; border-radius: 50%;
   background: #DCBD23; color: #1F2D5A; font: bold 22px/1 Arial, sans-serif; cursor: pointer;
 }
-/* The buttons that open the panels: the description (i) above, the search below, nearest the thumb. */
+/* The buttons that open the panels, in the top-left corner: the description (i) above, the search below. */
 #panelButtons { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .panel-toggle {
   height: 44px; padding: 0 16px; border-radius: 22px; border: 2px solid #fff;

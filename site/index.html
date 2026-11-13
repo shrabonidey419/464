@@ -7,12 +7,12 @@
   <!-- Leaflet: the map library. Loaded from the internet, nothing to install. -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- The ?v= number forces phones to load the new file. Raise it each time you change style.css or app.js. -->
-  <link rel="stylesheet" href="style.css?v=6" />
+  <link rel="stylesheet" href="style.css?v=7" />
 </head>
 <body>
   <main>
   <!-- Two buttons on the map open the two panels: the search (🔍) and the description (i).
-       app.js moves them into the bottom-left corner of the map. -->
+       app.js moves them into the top-left corner of the map (the zoom buttons go bottom-left). -->
   <div id="panelButtons">
     <button type="button" id="infoToggle" class="panel-toggle" data-panel="info" aria-label="About this map" aria-expanded="false" aria-controls="infoPanel">i</button>
     <button type="button" id="searchToggle" class="panel-toggle" data-panel="search" aria-expanded="false" aria-controls="searchPanel"><span aria-hidden="true">🔍</span> Search</button>
@@ -85,6 +85,6 @@
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
