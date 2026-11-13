@@ -7,27 +7,21 @@
   <!-- Leaflet: the map library. Loaded from the internet, nothing to install. -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- The ?v= number forces phones to load the new file. Raise it each time you change style.css or app.js. -->
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
   <main>
-  <!-- On a phone the text panel folds into this "i" button, so the map can fill the screen. -->
-  <button type="button" id="infoToggle" aria-label="About this map and search" aria-expanded="false" aria-controls="panel">i</button>
-  <header id="panel">
-    <button type="button" id="infoClose" aria-label="Close the panel">&times;</button>
-    <h1>How far is the metro? Walking access to STM stations in Montréal</h1>
-    <p>Many students and residents in Montreal rely on the metro every day, but a station that looks close on a map can be a long or difficult walk. This map helps them see which areas have good walking access to an STM metro station and which do not.</p>
+  <!-- Two buttons on the map open the two panels: the search (🔍) and the description (i).
+       app.js moves them into the bottom-left corner of the map. -->
+  <div id="panelButtons">
+    <button type="button" id="infoToggle" class="panel-toggle" data-panel="info" aria-label="About this map" aria-expanded="false" aria-controls="infoPanel">i</button>
+    <button type="button" id="searchToggle" class="panel-toggle" data-panel="search" aria-expanded="false" aria-controls="searchPanel"><span aria-hidden="true">🔍</span> Search</button>
+  </div>
 
-    <h2>This map is for</h2>
-    <p>Students and residents in Montreal who want to check how easy it is to walk to the metro.</p>
-
-    <h2>What you can do here</h2>
-    <ul>
-      <li><strong>Read a station:</strong> the fill is the number of open grocery stores within a 500 m walk, the ring is the metro line, and a white dot means wheelchair access. Click it for details.</li>
-      <li><strong>See who is left out:</strong> tick <strong>5-minute walk areas</strong> on the map. Blank space is more than a 500 m walk from any station.</li>
-      <li><strong>Wheelchair users:</strong> tick the box below to keep only the stations you can use.</li>
-      <li><strong>Type a station name</strong> to see every grocery store within a 500 m walk, then click a store (in the list or on the map) to see its real walking route. Red routes are detours, more than 1.5 times the straight line, often because of a highway or rail line.</li>
-    </ul>
+  <!-- The search panel: open when the page loads on a computer, behind the 🔍 button on a phone. -->
+  <aside id="searchPanel" class="panel" aria-label="Search">
+    <button type="button" class="panel-close" aria-label="Close the search">&times;</button>
+    <h2 class="panel-title"><span aria-hidden="true">🔍</span> Search</h2>
 
     <label class="control">
       <input type="checkbox" id="accessibleOnly" />
@@ -49,6 +43,24 @@
       <button type="submit" disabled>Show stores</button>
     </form>
     <div id="pickerResults"></div>
+  </aside>
+
+  <!-- The description: behind the "i" button, so the map has more room. -->
+  <aside id="infoPanel" class="panel" aria-label="About this map">
+    <button type="button" class="panel-close" aria-label="Close the description">&times;</button>
+    <h1>How far is the metro? Walking access to STM stations in Montréal</h1>
+    <p>Many students and residents in Montreal rely on the metro every day, but a station that looks close on a map can be a long or difficult walk. This map helps them see which areas have good walking access to an STM metro station and which do not.</p>
+
+    <h2>This map is for</h2>
+    <p>Students and residents in Montreal who want to check how easy it is to walk to the metro.</p>
+
+    <h2>What you can do here</h2>
+    <ul>
+      <li><strong>Read a station:</strong> the fill is the number of open grocery stores within a 500 m walk, and the ring is the metro line. Click it for details, including wheelchair access.</li>
+      <li><strong>See who is left out:</strong> tick <strong>5-minute walk areas</strong> on the map. Blank space is more than a 500 m walk from any station.</li>
+      <li><strong>Wheelchair users:</strong> open the <strong>🔍 Search</strong> panel and tick the box to keep only the stations you can use.</li>
+      <li><strong>Type a station name</strong> in the <strong>🔍 Search</strong> panel to see every grocery store within a 500 m walk, then click a store (in the list or on the map) to see its real walking route. Red routes are detours, more than 1.5 times the straight line, often because of a highway or rail line.</li>
+    </ul>
 
     <h2>Not in this iteration</h2>
     <ul>
@@ -67,12 +79,12 @@
       <li>Walking network © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (<a href="https://opendatacommons.org/licenses/odbl/">ODbL</a>), downloaded with OSMnx on 8 November 2026.</li>
       <li>Basemap © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors.</li>
     </ul>
-  </header>
+  </aside>
 
   <div id="map"></div>
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

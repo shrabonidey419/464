@@ -138,3 +138,14 @@ I used Claude (Claude Code, an AI assistant) for these parts of the project:
 
 I chose what to build and which options to use. Claude wrote most of the code and ran checks on the results; for example, the notebook checks that no walk is shorter than its straight line.
 
+
+## Part 3: what I found, and one fix
+
+Evidence: In Round 1, on the phone, the tester overlooked one of the search boxes and didn’t notice it was there. In Round 3, the group suggested adding symbols and hiding the description so the map is bigger and easier to see.
+
+Severity: 2. Missing a search box slowed the tester down, but it didn’t stop them from finishing the task.
+
+My change: I will put the search boxes in their own panel with a search (🔍) icon, and replace the description with an icon that opens it, so the search is easy to spot and the map has more room. And when I checked the wheelchair checkbox it select the metro staion  not with  symbole  dot .
+
+Recheck: I’ll give the same task to someone new on a phone, with no help. Fixed means: they find the search box and start typing without hesitating or asking where to search.
+

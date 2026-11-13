@@ -1,5 +1,10 @@
 // Lab 3: metro stations and grocery access (Parts 6 to 8).
 
+// On a computer the search panel is open when the page loads; on a phone the map starts on its own.
+// Set before the map is made, so the map is sized for the panel from the start.
+const PHONE = window.matchMedia('(max-width: 800px)');
+if (!PHONE.matches) { document.body.dataset.panel = 'search'; }
+
 // preferCanvas draws every circle on one canvas instead of one page element
 // per marker, which keeps the map fast with many points.
 const map = L.map('map', { preferCanvas: true }).setView([45.50067037889345, -73.57793888179032], 12);
@@ -88,17 +93,13 @@ const layerControl = L.control.layers(null, {}, { collapsed: false }).addTo(map)
 const wheelchair = {};   // station name -> 'Yes' or 'No', from metro_stations.geojson
 
 // PART 7: one symbol per station. Fill = open grocery stores within a 500 m walk,
-// ring = metro line, white centre dot = wheelchair accessible.
+// ring = metro line. Wheelchair access is in the popup and the "accessible only" checkbox.
 function stationSymbol(feature, latlng) {
   const p = feature.properties;
-  const parts = [
+  return L.featureGroup([
     L.circleMarker(latlng, { radius: 10, stroke: false, fillColor: '#222', fillOpacity: 1 }),   // thin dark edge, so a yellow ring shows on a light map
     L.circleMarker(latlng, { radius: 7.5, color: colours[p.line] || '#5639ce', weight: 3, opacity: 1, fillColor: colourFor(p.walk_count), fillOpacity: 1 })
-  ];
-  if (wheelchair[p.station] === 'Yes') {
-    parts.push(L.circleMarker(latlng, { radius: 2.5, color: '#222', weight: 1, fillColor: '#fff', fillOpacity: 1 }));
-  }
-  return L.featureGroup(parts);
+  ]);
 }
 
 const stationLayer = L.geoJSON(null, {
@@ -187,8 +188,7 @@ function updateLegend() {
       '<br>Ring: metro line<br>' +
       Object.keys(colours).map(function (k) {
         return '<span class="ring" style="border-color:' + colours[k] + '"></span>' + k;
-      }).join('<br>') +
-      '<br><span class="dot"></span>White dot: wheelchair accessible');
+      }).join('<br>'));
   }
   if (map.hasLayer(walkAreaLayer)) {
     parts.push('<span class="area" style="background:' + AREA_COLOUR + '"></span>Within a ' + RADIUS_M + ' m walk of ' +
@@ -537,19 +537,41 @@ function buildStationSearch() {
 
 Promise.all([stationsLoaded, walkLoaded]).then(buildStationSearch);
 
-// ---- On a phone the text panel folds into an "i" button, so the map can fill the screen ----
-const panelToggle = document.getElementById('infoToggle');
-function setPanel(open) {
-  document.body.classList.toggle('panel-open', open);
-  panelToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+// ---- Two panels: the search (🔍) and the description (i) ----
+// One open at a time, or none. Their buttons sit in the map's bottom-left corner.
+const panelButtons = L.control({ position: 'bottomleft' });
+panelButtons.onAdd = function () {
+  const div = document.getElementById('panelButtons');
+  L.DomEvent.disableClickPropagation(div);   // a click on a button should not also click the map
+  return div;
+};
+panelButtons.addTo(map);
+
+const toggles = document.querySelectorAll('.panel-toggle');
+function setPanel(name) {   // 'search', 'info' or '' for none
+  if (name) { document.body.dataset.panel = name; } else { delete document.body.dataset.panel; }
+  toggles.forEach(function (b) { b.setAttribute('aria-expanded', b.dataset.panel === name ? 'true' : 'false'); });
+  map.invalidateSize();   // on a computer the map gets wider or narrower when a panel opens or closes
 }
-panelToggle.addEventListener('click', function () { setPanel(true); });
-document.getElementById('infoClose').addEventListener('click', function () { setPanel(false); });
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setPanel(false); } });
-// Choosing a store in a result list closes the panel, so the reader sees it on the map.
+setPanel(document.body.dataset.panel || '');   // the buttons show which panel is open when the page loads
+
+// A button opens its panel, or closes it when it is already open.
+toggles.forEach(function (b) {
+  b.addEventListener('click', function () {
+    setPanel(document.body.dataset.panel === b.dataset.panel ? '' : b.dataset.panel);
+    // On a computer, opening the search puts the cursor in the station box, ready to type.
+    // Not on a phone, where it would pop the keyboard up over the panel.
+    if (document.body.dataset.panel === 'search' && !PHONE.matches) { document.getElementById('stationName').focus(); }
+  });
+});
+document.querySelectorAll('.panel-close').forEach(function (b) {
+  b.addEventListener('click', function () { setPanel(''); });
+});
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setPanel(''); } });
+// On a phone, choosing a store in a result list closes the panel, so the reader sees it on the map.
 ['searchResults', 'pickerResults'].forEach(function (id) {
   document.getElementById(id).addEventListener('click', function (e) {
     const button = e.target.closest('button');
-    if (button && !button.dataset.keepOpen && window.matchMedia('(max-width: 800px)').matches) { setPanel(false); }
+    if (button && !button.dataset.keepOpen && PHONE.matches) { setPanel(''); }
   });
 });

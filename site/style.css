@@ -1,41 +1,47 @@
 /* PRESENTATION: how the page looks. */
-/* Text in a side panel next to the map, so the map is always on screen. */
+/* Two panels, the search (🔍) and the description (i). One is open at a time, or none,
+   chosen by body[data-panel]. The buttons that open them sit in the map's bottom-left corner. */
 body { margin: 0; font-family: Arial, Helvetica, sans-serif; }
 main { display: flex; height: 100vh; }
-header { flex: 0 0 380px; box-sizing: border-box; overflow-y: auto; padding: 10px 16px; background: #1F2D5A; color: #fff; }
-header h1 { margin: 0; font-size: 20px; }
-header h2 { margin: 14px 0 4px; font-size: 15px; }
-header p { margin: 4px 0 0; font-size: 14px; color: #DCBD23; }
-header ul { margin: 4px 0 0; padding-left: 18px; font-size: 14px; }
-header a { color: #DCBD23; }
+.panel { flex: 0 0 380px; box-sizing: border-box; overflow-y: auto; padding: 10px 16px; background: #1F2D5A; color: #fff; }
+.panel h1 { margin: 0; font-size: 20px; }
+.panel h2 { margin: 14px 0 4px; font-size: 15px; }
+.panel .panel-title { margin: 4px 0 10px; font-size: 18px; }
+.panel p { margin: 4px 0 0; font-size: 14px; color: #DCBD23; }
+.panel ul { margin: 4px 0 0; padding-left: 18px; font-size: 14px; }
+.panel a { color: #DCBD23; }
 #map { flex: 1; height: 100vh; }
-/* The "i" button and the close button are only used on a phone. */
-#infoToggle, #infoClose { display: none; }
-/* On a phone the map fills the screen and the text panel folds into a round "i" button.
-   Tapping it slides the panel up from the bottom, over the map. */
+.panel-close {
+  position: sticky; top: 0; float: right; margin: 0 -6px 0 8px;
+  width: 32px; height: 32px; border: none; border-radius: 50%;
+  background: #DCBD23; color: #1F2D5A; font: bold 22px/1 Arial, sans-serif; cursor: pointer;
+}
+/* The buttons that open the panels: the description (i) above, the search below, nearest the thumb. */
+#panelButtons { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.panel-toggle {
+  height: 44px; padding: 0 16px; border-radius: 22px; border: 2px solid #fff;
+  background: #1F2D5A; color: #DCBD23; font: bold 16px Arial, Helvetica, sans-serif;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4); cursor: pointer;
+}
+#infoToggle { width: 44px; padding: 0; border-radius: 50%; font: bold italic 22px Georgia, serif; }
+.panel-toggle[aria-expanded="true"] { background: #DCBD23; color: #1F2D5A; }
+/* On a computer the open panel sits beside the map; with both closed the map gets the whole width. */
+@media (min-width: 801px) {
+  .panel { display: none; }
+  body[data-panel="search"] #searchPanel, body[data-panel="info"] #infoPanel { display: block; }
+}
+/* On a phone the map fills the screen and the open panel slides up from the bottom, over the map. */
 @media (max-width: 800px) {
   main { display: block; height: 100vh; height: 100dvh; }
   #map { height: 100%; }
-  header {
+  .panel {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
     max-height: 75vh; overflow-y: auto; border-radius: 12px 12px 0 0;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.4);
     transform: translateY(100%); visibility: hidden;
     transition: transform 0.25s, visibility 0.25s;
   }
-  body.panel-open header { transform: none; visibility: visible; }
-  #infoToggle {
-    display: block; position: fixed; left: 10px; bottom: 24px; z-index: 1000;
-    width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff;
-    background: #1F2D5A; color: #DCBD23; font: bold italic 22px Georgia, serif;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4); cursor: pointer;
-  }
-  body.panel-open #infoToggle { display: none; }
-  #infoClose {
-    display: block; position: sticky; top: 0; float: right; margin: 0 -6px 0 8px;
-    width: 32px; height: 32px; border: none; border-radius: 50%;
-    background: #DCBD23; color: #1F2D5A; font: bold 22px/1 Arial, sans-serif; cursor: pointer;
-  }
+  body[data-panel="search"] #searchPanel, body[data-panel="info"] #infoPanel { transform: none; visibility: visible; }
 }
 .legend { background: #fff; padding: 6px 10px; border-radius: 6px; line-height: 1.6; font-size: 13px; }
 #storeSearch, #stationSearch { margin-top: 8px; font-size: 14px; }
@@ -48,7 +54,7 @@ header a { color: #DCBD23; }
 #pickerResults ul { margin: 4px 0 0; padding-left: 18px; font-size: 14px; }
 .legend span { display: inline-block; box-sizing: border-box; width: 12px; height: 12px; border: 1px solid #3d3333; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 .legend span.ring { background: #fff; border-width: 3px; }                                       /* metro line: the ring colour */
-.legend span.dot { width: 7px; height: 7px; margin: 0 8px 0 3px; background: #fff; border-color: #222; }   /* wheelchair accessible */
+/*.legend span.dot { width: 7px; height: 7px; margin: 0 8px 0 3px; background: #fff; border-color: #222; }   /* wheelchair accessible */
 .legend span.area { border: none; border-radius: 0; opacity: 0.4; }                              /* the walk areas, as see-through as on the map */
 .legend summary { cursor: pointer; font-weight: bold; }
 .legend details[open] summary { margin-bottom: 4px; }
