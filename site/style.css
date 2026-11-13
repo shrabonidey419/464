@@ -43,6 +43,12 @@ main { display: flex; height: 100vh; }
   }
   body[data-panel="search"] #searchPanel, body[data-panel="info"] #infoPanel { transform: none; visibility: visible; }
 }
+/* The button in a station's popup that shows its grocery stores. */
+.popup-button {
+  margin-top: 8px; padding: 6px 10px; border: none; border-radius: 4px;
+  background: #1F2D5A; color: #DCBD23; font: bold 13px Arial, Helvetica, sans-serif; cursor: pointer;
+}
+.popup-button:hover { background: #2c3f7a; }
 .legend { background: #fff; padding: 6px 10px; border-radius: 6px; line-height: 1.6; font-size: 13px; }
 #storeSearch, #stationSearch { margin-top: 8px; font-size: 14px; }
 #storeSearch label, #stationSearch label { display: block; }

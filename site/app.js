@@ -107,9 +107,20 @@ const stationLayer = L.geoJSON(null, {
   // PART 8: a popup built from the properties the notebooks wrote.
   onEachFeature: function (feature, layer) {
     const p = feature.properties;
-    layer.bindPopup('<b>' + p.station + '</b><br>Line: ' + p.line + '<br>Wheelchair access: ' + (wheelchair[p.station] || 'unknown') +
-      '<br>Open grocery stores within a ' + RADIUS_M + ' m walk: ' + p.walk_count +
-      '<br>Within ' + RADIUS_M + ' m in a straight line: ' + p.straight_count);
+    layer.bindPopup(function () {
+      const div = document.createElement('div');
+      div.innerHTML = '<b>' + p.station + '</b><br>Line: ' + p.line + '<br>Wheelchair access: ' + (wheelchair[p.station] || 'unknown') +
+        '<br>Open grocery stores within a ' + RADIUS_M + ' m walk: ' + p.walk_count +
+        '<br>Within ' + RADIUS_M + ' m in a straight line: ' + p.straight_count + '<br>';
+      // The button shows this station's stores in the station box, the same as typing its name there.
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'popup-button';
+      button.textContent = 'Show grocery stores within ' + RADIUS_M + ' m';
+      button.addEventListener('click', function () { showStationStores(p.station); });
+      div.appendChild(button);
+      return div;
+    });
   }
 }).addTo(map);
 layerControl.addOverlay(stationLayer, 'Metro stations');
@@ -458,6 +469,16 @@ const walkLoaded = Promise.all([
 // The walk-area layer also needs the wheelchair access before it can be filtered.
 Promise.all([accessLoaded, walkLoaded]).then(applyAccessFilter);
 
+// The station popup's button: open the search panel and show that station's stores.
+// pickStation is set by buildStationSearch once the walk areas and routes are in.
+let pickStation = null;
+function showStationStores(station) {
+  map.closePopup();
+  setPanel('search');   // before showing the stores, so the map is zoomed to the right size
+  document.getElementById('stationName').value = station;
+  if (pickStation) { pickStation(station); }
+}
+
 // Runs once every file is in, so a station always has its walk area and routes to work with.
 function buildStationSearch() {
   const input = document.getElementById('stationName');
@@ -530,6 +551,7 @@ function buildStationSearch() {
     pick(input.value);
   });
 
+  pickStation = pick;
   input.placeholder = 'e.g. Namur, Berri-UQAM';
   input.disabled = false;
   button.disabled = false;

@@ -145,7 +145,9 @@ Evidence: In Round 1, on the phone, the tester overlooked one of the search boxe
 
 Severity: 2. Missing a search box slowed the tester down, but it didn’t stop them from finishing the task.
 
-My change: I will put the search boxes in their own panel with a search (🔍) icon, and replace the description with an icon that opens it, so the search is easy to spot and the map has more room. And when I checked the wheelchair checkbox it select the metro staion  not with  symbole  dot .
+My change: I will put the search boxes in their own panel with a search (🔍) icon, and replace the description with an icon that opens it, so the search is easy to spot and the map has more room. And when I checked the wheelchair checkbox it select the metro staion  not with  symbole  dot . 
 
 Recheck: I’ll give the same task to someone new on a phone, with no help. Fixed means: they find the search box and start typing without hesitating or asking where to search.
+
+After the recheck: I added a "Show grocery stores within 500 m" button to each metro station's popup. Clicking it opens the search panel and shows the open grocery stores within a 500 m walk of that station. When I select one of those stores, the map draws the walking route to it.
 
